@@ -15,6 +15,15 @@ public static class MedicationFactory
 
             Medication = new CodeableConcept
             {
+                Coding = new List<Coding>
+                    {
+                        new Coding
+                        {
+                            System = "http://www.nlm.nih.gov/research/umls/rxnorm",
+                            Code = "314076",
+                            Display = "lisinopril 10 MG Oral Tablet"
+                        }
+                    },
                 Text = "Lisinopril 10 mg"
             },
 
@@ -45,9 +54,18 @@ public static class MedicationFactory
 
             Medication = new CodeableConcept
             {
+                Coding = new List<Coding>
+                    {
+                        new Coding
+                        {
+                            System = "http://www.nlm.nih.gov/research/umls/rxnorm",
+                            Code = "617318",
+                            Display = "atorvastatin 20 MG Oral Tablet"
+                        }
+                    },
+
                 Text = "Atorvastatin 20 mg"
             },
-
             Subject = new ResourceReference
             {
                 Reference = "Patient/patient-001",

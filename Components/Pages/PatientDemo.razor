@@ -121,8 +121,15 @@
 <h2>Medical Conditions</h2>
 
 <p>
-    <b>Condition:</b>
-    @hypertension.Code?.Text
+    <b>SNOMED CT:</b>
+    @(hypertension.Code?
+        .Coding.FirstOrDefault()?.Code)
+</p>
+
+<p>
+    <b>Code system:</b>
+    @(hypertension.Code?
+        .Coding.FirstOrDefault()?.System)
 </p>
 
 <p>
@@ -146,9 +153,21 @@
 
 <hr />
 
-<p>
+@* <p>
     <b>Condition:</b>
     @diabetes.Code?.Text
+</p> *@
+
+<p>
+    <b>SNOMED CT:</b>
+    @(diabetes.Code?
+        .Coding.FirstOrDefault()?.Code)
+</p>
+
+<p>
+    <b>Code system:</b>
+    @(diabetes.Code?
+        .Coding.FirstOrDefault()?.System)
 </p>
 
 <p>

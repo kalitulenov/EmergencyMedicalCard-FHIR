@@ -37,6 +37,16 @@ public static class AllergyFactory
 
             Code = new CodeableConcept
             {
+                Coding = new List<Coding>
+                    {
+                        new Coding
+                        {
+                            System = "http://snomed.info/sct",
+                            Code = "764146007",
+                            Display = "Penicillin"
+                        }
+                    },
+
                 Text = "Penicillin"
             },
 
@@ -98,9 +108,18 @@ public static class AllergyFactory
 
             Code = new CodeableConcept
             {
+                Coding = new List<Coding>
+                    {
+                        new Coding
+                        {
+                            System = "http://snomed.info/sct",
+                            Code = "762952008",
+                            Display = "Peanut"
+                        }
+                    },
+
                 Text = "Peanut"
             },
-
             Patient = new ResourceReference
             {
                 Reference = "Patient/patient-001",

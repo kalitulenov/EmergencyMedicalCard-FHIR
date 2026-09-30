@@ -24,6 +24,15 @@ public static class ConditionFactory
 
             Code = new CodeableConcept
             {
+                Coding = new List<Coding>
+                {
+                    new Coding
+                    {
+                        System = "http://snomed.info/sct",
+                        Code = "38341003",
+                        Display = "Hypertensive disorder"
+                    }
+                },
                 Text = "Hypertension"
             },
 
@@ -57,9 +66,17 @@ public static class ConditionFactory
 
             Code = new CodeableConcept
             {
+                Coding = new List<Coding>
+                    {
+                        new Coding
+                        {
+                            System = "http://snomed.info/sct",
+                            Code = "44054006",
+                            Display = "Diabetes mellitus type 2"
+                        }
+                    },
                 Text = "Type 2 diabetes mellitus"
             },
-
             Subject = new ResourceReference
             {
                 Reference = "Patient/patient-001",
