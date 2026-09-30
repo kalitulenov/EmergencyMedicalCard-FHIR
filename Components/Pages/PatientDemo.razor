@@ -178,7 +178,7 @@
         @conditionJsonDiabetes
 </pre>
 
-@* ==============================Current Medications Lisinopril========================================== *@
+@* ===========================Current Medications Lisinopril========================================== *@
 
 <hr />
 
@@ -200,13 +200,13 @@
 </p>
 
 
-@* ==============================Current Medications Atorvastatin========================================== *@
+@* ======================Current Medications Atorvastatin========================================== *@
 
 <hr />
 
 <p>
     <b>Medication:</b>
-    @(atorvastatin.Medication as CodeableConcept)?.Text)
+    @((atorvastatin.Medication as CodeableConcept)?.Text)
 </p>
 
 <p>
@@ -227,6 +227,57 @@
     @medicationJson
     @medicationJsonAtorvastatin
 </pre>
+
+@* ==============================Observation Blood Type========================================== *@
+
+<hr />
+
+<h2>Blood Type</h2>
+
+<p>
+    <b>Observation:</b>
+    @bloodGroup.Code?.Text
+</p>
+
+<p>
+    <b>LOINC:</b>
+    @(bloodGroup.Code?.Coding.FirstOrDefault()?.Code)
+</p>
+
+<p>
+    <b>Result:</b>
+    @((bloodGroup.Value as CodeableConcept)?.Text)
+</p>
+
+@* ==============================Observation RH Factor========================================== *@
+
+<hr />
+
+<h2>RH Factor</h2>
+
+<p>
+    <b>Observation:</b>
+    @rhFactor.Code?.Text
+</p>
+
+<p>
+    <b>LOINC:</b>
+    @(rhFactor.Code?.Coding.FirstOrDefault()?.Code)
+</p>
+
+<p>
+    <b>Result:</b>
+    @((rhFactor.Value as CodeableConcept)?.Text)
+</p>
+
+<h3>Observation JSON</h3>
+
+<pre style="white-space: pre-wrap;
+    overflow-wrap: anywhere;">
+    @observationJson
+    @observationJsonRhFactor
+</pre>
+
 
 @* ==============================Emergency FHIR Bundle========================================== *@
 
@@ -373,15 +424,23 @@
 
         var medications = new List<MedicationStatement>
         {
-            lisinopril
+            lisinopril,
+            atorvastatin
         };
-                
+
+        var observations = new List<Observation>
+            {
+                bloodGroup,
+                rhFactor
+            };
+
         emergencyBundle =
             BundleFactory.CreateEmergencyBundle(
                 patient,
                 allergies,
                 conditions,
-                medications
+                medications,
+                observations
             );
 
         fhirJson =
@@ -425,6 +484,18 @@
                 pretty: true
             );
 
+        observationJson =
+            FhirJsonSerializer.Default.SerializeToString(
+                bloodGroup,
+                pretty: true
+            );
+
+        observationJsonRhFactor =
+            FhirJsonSerializer.Default.SerializeToString(
+                rhFactor,
+                pretty: true
+            );
+
         bundleJson =
             FhirJsonSerializer.Default.SerializeToString(
                 emergencyBundle,
@@ -460,5 +531,14 @@
 
     private string medicationJson = "";
     private string medicationJsonAtorvastatin = "";
+
+    private Observation bloodGroup =
+    ObservationFactory.CreateBloodGroup();
+
+    private Observation rhFactor =
+    ObservationFactory.CreateRhFactor();
+
+    private string observationJson = "";
+    private string observationJsonRhFactor = "";        
 
 }

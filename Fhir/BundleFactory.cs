@@ -11,7 +11,8 @@ public static class BundleFactory
         Patient patient,
         List<AllergyIntolerance> allergies,
         List<Condition> conditions,
-        List<MedicationStatement> medications)
+        List<MedicationStatement> medications,
+        List<Observation> observations)
     {
         var patientUrl = BaseUrl + "Patient/" + patient.Id;
 
@@ -77,6 +78,23 @@ public static class BundleFactory
                     "MedicationStatement/" + medication.Id,
 
                 Resource = medication
+            });
+        }
+
+        foreach (var observation in observations)
+        {
+            observation.Subject = new ResourceReference
+            {
+                Reference = patientUrl,
+                Display = "John Smith"
+            };
+
+            bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = BaseUrl +
+                    "Observation/" + observation.Id,
+
+                Resource = observation
             });
         }
 
