@@ -1,0 +1,464 @@
+﻿@page "/patient"
+
+@using Hl7.Fhir.Model
+@using Hl7.Fhir.Serialization
+@using EmergencyMedicalCard.Fhir
+
+@* ========================Emergency Medical Card================================================ *@
+
+<PageTitle>Emergency Medical Card</PageTitle>
+
+<h1>Emergency Medical Information Card</h1>
+
+<h2>Patient Information</h2>
+
+<p><b>MRN:</b> @patient.Identifier[0].Value</p>
+<p>
+    <b>Name:</b> @patient.Name[0].Given.First()
+    @patient.Name[0].Family
+</p>
+<p><b>Date of Birth:</b> @patient.BirthDate</p>
+<p><b>Gender:</b> @patient.Gender</p>
+<p><b>Phone:</b> @patient.Telecom[0].Value</p>
+<p><b>Email:</b> @patient.Telecom[1].Value</p>
+<p><b>City:</b> @patient.Address[0].City</p>
+
+@* =================================Emergency Contact======================================= *@
+
+<hr />
+
+<h2>Emergency Contact</h2>
+
+<p>
+    <b>Name:</b>
+    @patient.Contact[0].Name.Given.First()
+    @patient.Contact[0].Name.Family
+</p>
+
+<p>
+    <b>Relationship:</b>
+    @patient.Contact[0].Relationship[0].Text
+</p>
+
+<p>
+    <b>Phone:</b>
+    @patient.Contact[0].Telecom[0].Value
+</p>
+
+@* =============================FHIR JSON=========================================== *@
+
+<hr />
+
+<h2>FHIR JSON</h2>
+
+<pre style="white-space: pre-wrap; overflow-wrap: anywhere;">
+@fhirJson
+</pre>
+
+@* ===================================Patient Allergies===================================== *@
+
+<hr />
+
+<h2>Patient Allergies</h2>
+
+<p>
+    <b>Allergy:</b> @allergy.Code?.Text
+</p>
+
+<p>
+    <b>Clinical status:</b>
+    @allergy.ClinicalStatus?.Coding.FirstOrDefault()?.Code
+</p>
+
+<p>
+    <b>Criticality:</b> @allergy.Criticality
+</p>
+<p>
+    <b>Reaction:</b>
+    @(allergy.Reaction.FirstOrDefault()?
+    .Manifestation.FirstOrDefault()?.Text)
+</p>
+
+@* ======================================================================== *@
+
+<hr />
+
+<p>
+    <b>Allergy:</b> @peanutAllergy.Code?.Text
+</p>
+
+<p>
+    <b>Clinical status:</b>
+    @peanutAllergy.ClinicalStatus?.Coding.FirstOrDefault()?.Code
+</p>
+
+<p>
+    <b>Criticality:</b> @peanutAllergy.Criticality
+</p>
+
+
+<p>
+    <b>Reaction:</b>
+    @(peanutAllergy.Reaction.FirstOrDefault()?
+    .Manifestation.FirstOrDefault()?.Text)
+</p>
+
+@* ============================AllergyIntolerance JSON======================================== *@
+
+<hr />
+
+<h2>AllergyIntolerance JSON</h2>
+
+<pre style="white-space: pre-wrap; overflow-wrap: anywhere;">
+    @allergyJson
+    @allergyJsonPeanut
+</pre>
+
+@* ==============================Medical Conditions Hypertension========================================== *@
+
+<hr />
+
+<h2>Medical Conditions</h2>
+
+<p>
+    <b>Condition:</b>
+    @hypertension.Code?.Text
+</p>
+
+<p>
+    <b>Clinical status:</b>
+    @(hypertension.ClinicalStatus?
+        .Coding.FirstOrDefault()?.Code)
+</p>
+
+<p>
+    <b>Verification:</b>
+    @(hypertension.VerificationStatus?
+        .Coding.FirstOrDefault()?.Code)
+</p>
+
+<p>
+    <b>Onset:</b>
+    @((hypertension.Onset as FhirDateTime)?.Value)
+</p>
+
+@* ==============================Medical Conditions Diabetes======================================= *@
+
+<hr />
+
+<p>
+    <b>Condition:</b>
+    @diabetes.Code?.Text
+</p>
+
+<p>
+    <b>Clinical status:</b>
+    @(diabetes.ClinicalStatus?
+        .Coding.FirstOrDefault()?.Code)
+</p>
+
+<p>
+    <b>Verification:</b>
+    @(diabetes.VerificationStatus?
+        .Coding.FirstOrDefault()?.Code)
+</p>
+
+<p>
+    <b>Onset:</b>
+    @((diabetes.Onset as FhirDateTime)?.Value)
+</p>
+
+<hr />
+
+<h3>Condition JSON</h3>
+
+<pre style="white-space: pre-wrap;
+        overflow-wrap: anywhere;">
+        @conditionJson
+        @conditionJsonDiabetes
+</pre>
+
+@* ==============================Current Medications Lisinopril========================================== *@
+
+<hr />
+
+<h2>Current Medications</h2>
+
+<p>
+    <b>Medication:</b>
+    @((lisinopril.Medication as CodeableConcept)?.Text)
+</p>
+
+<p>
+    <b>Status:</b>
+    @lisinopril.Status
+</p>
+
+<p>
+    <b>Dosage:</b>
+    @lisinopril.Dosage.FirstOrDefault()?.Text
+</p>
+
+
+@* ==============================Current Medications Atorvastatin========================================== *@
+
+<hr />
+
+<p>
+    <b>Medication:</b>
+    @(atorvastatin.Medication as CodeableConcept)?.Text)
+</p>
+
+<p>
+    <b>Status:</b>
+    @atorvastatin.Status
+</p>
+
+<p>
+    <b>Dosage:</b>
+    @atorvastatin.Dosage.FirstOrDefault()?.Text
+</p>
+
+
+<h3>MedicationStatement JSON</h3>
+
+<pre style="white-space: pre-wrap;
+    overflow-wrap: anywhere;">
+    @medicationJson
+    @medicationJsonAtorvastatin
+</pre>
+
+@* ==============================Emergency FHIR Bundle========================================== *@
+
+<hr />
+
+<h2>Emergency FHIR Bundle</h2>
+
+<p>
+    <b>Bundle type:</b>
+    @emergencyBundle?.Type
+</p>
+
+<p>
+    <b>Resources:</b>
+    @emergencyBundle?.Entry.Count
+</p>
+
+@* ======================================================================== *@
+
+@foreach (var entry in emergencyBundle?.Entry ?? [])
+{
+    <li>
+        @entry.Resource.GetType().Name
+    </li>
+}
+
+@* =============================FHIR Bundle JSON=========================================== *@
+
+<hr />
+
+<h3>FHIR Bundle JSON</h3>
+
+<pre style="white-space: pre-wrap;
+    overflow-wrap: anywhere;">
+    @bundleJson
+</pre>
+
+@code {
+    private Bundle? emergencyBundle;
+
+    private string bundleJson = "";
+
+    private Patient patient = new Patient
+    {
+        Id = "patient-001",
+
+        Active = true,
+
+        Identifier = new List<Identifier>
+        {
+            new Identifier
+            {
+                System = "https://hospital.example.org/mrn",
+                Value = "MRN-2026-001"
+            }
+        },
+
+        Name = new List<HumanName>
+        {
+            new HumanName
+            {
+                Use = HumanName.NameUse.Official,
+                Family = "Smith",
+                Given = new[] { "John" }
+            }
+        },
+
+        Gender = AdministrativeGender.Male,
+
+        BirthDate = "1955-04-12",
+
+        Telecom = new List<ContactPoint>
+        {
+            new ContactPoint
+            {
+                System = ContactPoint.ContactPointSystem.Phone,
+                Use = ContactPoint.ContactPointUse.Mobile,
+                Value = "+1-202-555-0142"
+            },
+            new ContactPoint{
+                System = ContactPoint.ContactPointSystem.Email,
+                Use = ContactPoint.ContactPointUse.Home,
+                Value = "john.smith@example.com"
+            },
+
+        },
+
+        Address = new List<Address>
+        {
+            new Address
+            {
+                City = "Washington",
+                State = "DC",
+                Country = "USA"
+            }
+        },
+
+        Contact = new List<Patient.ContactComponent>
+        {
+            new Patient.ContactComponent
+            {
+                Relationship = new List<CodeableConcept>
+                {
+                    new CodeableConcept
+                    {
+                        Text = "Daughter"
+                    }
+                },
+
+                Name = new HumanName
+                {
+                    Family = "Smith",
+                    Given = new[] { "Mary" }
+                },
+
+                Telecom = new List<ContactPoint>
+                {
+                    new ContactPoint
+                    {
+                        System =
+                            ContactPoint.ContactPointSystem.Phone,
+                        Value = "+1-202-555-0175"
+                    }
+                }
+            }
+        }
+    };
+
+    private string fhirJson = "";
+
+    protected override void OnInitialized()
+    {
+        var allergies = new List<AllergyIntolerance>
+        {
+            allergy,
+            peanutAllergy
+        };
+
+        var conditions = new List<Condition>
+        {
+            hypertension,
+            diabetes
+        };
+
+        var medications = new List<MedicationStatement>
+        {
+            lisinopril
+        };
+                
+        emergencyBundle =
+            BundleFactory.CreateEmergencyBundle(
+                patient,
+                allergies,
+                conditions,
+                medications
+            );
+
+        fhirJson =
+            FhirJsonSerializer.Default.SerializeToString(
+                patient,
+                pretty: true
+            );
+
+        allergyJson =
+            FhirJsonSerializer.Default.SerializeToString(
+                allergy,
+                pretty: true            );
+
+        allergyJsonPeanut =
+            FhirJsonSerializer.Default.SerializeToString(
+                peanutAllergy,
+                pretty: true
+            );
+
+        conditionJson =
+            FhirJsonSerializer.Default.SerializeToString(
+                hypertension,
+                pretty: true
+            );
+
+        conditionJsonDiabetes =
+            FhirJsonSerializer.Default.SerializeToString(
+                diabetes,
+                pretty: true
+            );
+
+        medicationJson =
+            FhirJsonSerializer.Default.SerializeToString(
+                lisinopril,
+                pretty: true
+            );
+
+        medicationJsonAtorvastatin =
+            FhirJsonSerializer.Default.SerializeToString(
+                atorvastatin,
+                pretty: true
+            );
+
+        bundleJson =
+            FhirJsonSerializer.Default.SerializeToString(
+                emergencyBundle,
+                pretty: true
+            );
+
+
+    }
+
+    private AllergyIntolerance allergy =
+    AllergyFactory.CreatePenicillinAllergy();
+
+    private AllergyIntolerance peanutAllergy =
+    AllergyFactory.CreatePeanutAllergy();
+
+    private string allergyJson = "";
+    private string allergyJsonPeanut = "";
+
+    private Condition hypertension =
+    ConditionFactory.CreateHypertension();
+
+    private Condition diabetes =
+    ConditionFactory.CreateDiabetes();
+
+    private string conditionJson = "";
+    private string conditionJsonDiabetes = "";
+
+    private MedicationStatement lisinopril =
+    MedicationFactory.CreateLisinopril();
+
+    private MedicationStatement atorvastatin =
+    MedicationFactory.CreateAtorvastatin();
+
+    private string medicationJson = "";
+    private string medicationJsonAtorvastatin = "";
+
+}
