@@ -12,7 +12,10 @@ public static class BundleFactory
         List<AllergyIntolerance> allergies,
         List<Condition> conditions,
         List<MedicationStatement> medications,
-        List<Observation> observations)
+        List<Observation> observations,
+        List<Practitioner> practitioners,
+        List<MedicationRequest> medicationRequests)
+
     {
         var patientUrl = BaseUrl + "Patient/" + patient.Id;
 
@@ -78,6 +81,42 @@ public static class BundleFactory
                     "MedicationStatement/" + medication.Id,
 
                 Resource = medication
+            });
+        }
+
+        foreach (var practitioner in practitioners)
+        {
+            bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = BaseUrl +
+                    "Practitioner/" + practitioner.Id,
+
+                Resource = practitioner
+            });
+        }
+
+        foreach (var request in medicationRequests)
+        {
+            request.Subject = new ResourceReference
+            {
+                Reference = patientUrl,
+                Display = "John Smith"
+            };
+
+            request.Requester = new ResourceReference
+            {
+                Reference =
+                    BaseUrl + "Practitioner/practitioner-001",
+
+                Display = "Dr. Robert Brown"
+            };
+
+            bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = BaseUrl +
+                    "MedicationRequest/" + request.Id,
+
+                Resource = request
             });
         }
 

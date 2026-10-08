@@ -10,8 +10,7 @@ public static class MedicationFactory
         {
             Id = "medicationstatement-001",
 
-            Status =
-                MedicationStatement.MedicationStatusCodes.Active,
+            Status = MedicationStatement.MedicationStatusCodes.Active,
 
             Medication = new CodeableConcept
             {
