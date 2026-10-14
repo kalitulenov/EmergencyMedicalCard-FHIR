@@ -26,6 +26,16 @@ public static class MedicationFactory
                 Text = "Lisinopril 10 mg"
             },
 
+            Text = new Narrative
+            {
+                Status = Narrative.NarrativeStatus.Generated,
+                Div =
+                    "<div xmlns=\"http://www.w3.org/1999/xhtml\">" +
+                    "<p><b>Lisinopril 10 mg</b></p>" +
+                    "<p>Status: Active</p>" +
+                    "</div>"
+            },
+
             Subject = new ResourceReference
             {
                 Reference = "Patient/patient-001",
@@ -59,12 +69,24 @@ public static class MedicationFactory
                         {
                             System = "http://www.nlm.nih.gov/research/umls/rxnorm",
                             Code = "617318",
-                            Display = "atorvastatin 20 MG Oral Tablet"
+                            Display = "atorvastatin 20 MG Oral Tablet [Lipitor]"
                         }
                     },
 
                 Text = "Atorvastatin 20 mg"
             },
+
+            Text = new Narrative
+            {
+                Status = Narrative.NarrativeStatus.Generated,
+                Div =
+                    "<div xmlns=\"http://www.w3.org/1999/xhtml\">" +
+                    "<p><b>Atorvastatin 20 mg</b></p>" +
+                    "<p>Status: Active</p>" +
+                    "</div>"
+            },
+
+
             Subject = new ResourceReference
             {
                 Reference = "Patient/patient-001",

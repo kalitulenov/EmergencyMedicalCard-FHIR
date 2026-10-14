@@ -11,8 +11,4 @@
     <PackageReference Include="Hl7.Fhir.R4" Version="6.5.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="FhirExamples\" />
-  </ItemGroup>
-
 </Project>

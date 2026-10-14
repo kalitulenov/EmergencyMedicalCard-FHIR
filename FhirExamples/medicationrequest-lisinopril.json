@@ -1,0 +1,85 @@
+{
+  "resourceType": "MedicationRequest",
+  "id": "medicationrequest-001",
+  "meta": {
+    "profile": [
+      "http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"
+    ]
+  },
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>Medication order: Lisinopril 10 mg oral tablet</b></p><p>Status: Active</p><p>Intent: Order</p><p>Patient: John Smith</p><p>Prescriber: Dr. Robert Brown</p><p>Authored: 2026-06-10</p></div>"
+  },
+  "status": "active",
+  "intent": "order",
+  "medicationCodeableConcept": {
+    "coding": [
+      {
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "code": "314076",
+        "display": "lisinopril 10 MG Oral Tablet"
+      }
+    ],
+    "text": "Lisinopril 10 mg"
+  },
+  "subject": {
+    "reference": "https://hospital.example.org/fhir/Patient/patient-001",
+    "display": "John Smith"
+  },
+  "authoredOn": "2026-06-10",
+  "requester": {
+    "reference": "https://hospital.example.org/fhir/Practitioner/practitioner-001",
+    "display": "Dr. Robert Brown"
+  },
+  "reasonReference": [
+    {
+      "reference": "Condition/condition-001",
+      "display": "Hypertension"
+    }
+  ],
+  "dosageInstruction": [
+    {
+      "text": "Take 10 mg by mouth once daily",
+      "timing": {
+        "repeat": {
+          "frequency": 1,
+          "period": 1,
+          "periodUnit": "d"
+        }
+      },
+      "route": {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "26643006",
+            "display": "Oral route"
+          }
+        ],
+        "text": "By mouth"
+      },
+      "doseAndRate": [
+        {
+          "doseQuantity": {
+            "value": 10,
+            "unit": "mg",
+            "system": "http://unitsofmeasure.org",
+            "code": "mg"
+          }
+        }
+      ]
+    }
+  ],
+  "dispenseRequest": {
+    "numberOfRepeatsAllowed": 2,
+    "quantity": {
+      "value": 30,
+      "unit": "tablets"
+    },
+    "expectedSupplyDuration": {
+      "value": 30,
+      "unit": "days",
+      "system": "http://unitsofmeasure.org",
+      "code": "d"
+    }
+  }
+}

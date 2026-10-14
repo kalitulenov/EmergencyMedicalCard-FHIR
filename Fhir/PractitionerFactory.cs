@@ -12,16 +12,31 @@ public static class PractitionerFactory
 
             Active = true,
 
-            Identifier = new List<Identifier>
+            Meta = new Meta
+            {
+                Profile = new[]
                 {
-                    new Identifier
-                    {
-                        System =
-                            "https://hospital.example.org/practitioner-id",
+                    "http://hl7.org/fhir/us/core/StructureDefinition/us-core-practitioner"
+                }
+            },
 
-                        Value = "DOC-001"
-                    }
-                },
+            Identifier = new List<Identifier>
+            {
+                new Identifier
+                {
+                    System = "urn:oid:2.16.840.1.113883.19.999.2",
+                    Value = "DOC-001"
+                }
+            },
+
+            Text = new Narrative
+            {
+                Status = Narrative.NarrativeStatus.Generated,
+                Div =
+                    "<div xmlns=\"http://www.w3.org/1999/xhtml\">" +
+                    "<p><b>Dr. Robert Brown</b></p>" +
+                    "</div>"
+            },
 
             Name = new List<HumanName>
                 {

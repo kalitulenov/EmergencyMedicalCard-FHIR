@@ -25,6 +25,19 @@ public static class BundleFactory
             Type = Bundle.BundleType.Collection
         };
 
+        // Создаём учебную лабораторию
+        var laboratory = OrganizationFactory.CreateLaboratory();
+
+        var laboratoryUrl =
+            BaseUrl + "Organization/" + laboratory.Id;
+
+        // Добавляем лабораторию в Bundle
+        bundle.Entry.Add(new Bundle.EntryComponent
+        {
+            FullUrl = laboratoryUrl,
+            Resource = laboratory
+        });
+
         bundle.Entry.Add(new Bundle.EntryComponent
         {
             FullUrl = patientUrl,
@@ -111,6 +124,18 @@ public static class BundleFactory
                 Display = "Dr. Robert Brown"
             };
 
+            if (request.ReasonReference != null)
+            {
+                foreach (var reason in request.ReasonReference)
+                {
+                    if (reason.Reference != null &&
+                        reason.Reference.StartsWith("Condition/"))
+                    {
+                        reason.Reference = BaseUrl + reason.Reference;
+                    }
+                }
+            }
+
             bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = BaseUrl +
@@ -126,6 +151,16 @@ public static class BundleFactory
             {
                 Reference = patientUrl,
                 Display = "John Smith"
+            };
+
+            // Лаборатория, выполнившая исследование
+            observation.Performer = new List<ResourceReference>
+            {
+                new ResourceReference
+                {
+                    Reference = laboratoryUrl,
+                    Display = laboratory.Name
+                }
             };
 
             bundle.Entry.Add(new Bundle.EntryComponent

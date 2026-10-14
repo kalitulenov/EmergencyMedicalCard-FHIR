@@ -599,6 +599,56 @@
                 medicationRequests
             );
 
+        //------------------------------------------------------------------
+
+        // ------------- поиск Observation
+        // var observation = emergencyBundle.Entry
+        //     .Select(e => e.Resource)
+        //     .OfType<Observation>()
+        //     .FirstOrDefault(o => o.Performer?.Count > 0);
+
+        // if (observation != null)
+        // {
+        //     Console.WriteLine($"Found Observation: {observation.Id}");
+
+        //     observation.Performer = new List<ResourceReference>
+        //     {
+        //         new ResourceReference(
+        //             "https:hospital.example.org/fhir/Organization/lab-999")
+        //     };
+
+        //     Console.WriteLine("TEST: Invalid laboratory reference inserted.");
+        // }
+        // else
+        // {
+        //     Console.WriteLine("TEST ERROR: No Observation with Performer found.");
+        // }
+
+        var errors = BundleReferenceValidator.Validate(emergencyBundle);
+
+        Console.WriteLine($"Reference errors: {errors.Count}");
+
+        foreach (var error in errors)
+        {
+            Console.WriteLine(error);
+        }
+        //------------------------------------------------------------------
+        var referenceErrors = BundleReferenceValidator.Validate(emergencyBundle);
+
+        if (referenceErrors.Count == 0)
+        {
+            Console.WriteLine("SUCCESS: All checked Bundle references are valid.");
+        }
+        else
+        {
+            Console.WriteLine($"ERRORS: {referenceErrors.Count}");
+
+            foreach (var error in referenceErrors)
+            {
+                Console.WriteLine(error);
+            }
+        }
+
         fhirJson =
             FhirJsonSerializer.Default.SerializeToString(
                 patient,
