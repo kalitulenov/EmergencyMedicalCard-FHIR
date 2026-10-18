@@ -153,7 +153,7 @@ public static class AllergyFactory
                 .AllergyIntoleranceCategory?>
             {
                 AllergyIntolerance
-                    .AllergyIntoleranceCategory.Medication
+                    .AllergyIntoleranceCategory.Food
             },
 
             Criticality =

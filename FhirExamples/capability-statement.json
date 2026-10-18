@@ -1,0 +1,64 @@
+{
+  "resourceType": "CapabilityStatement",
+  "id": "emergency-medical-card-capabilities",
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>EmergencyMedicalCard FHIR R4 Server</b></p><p>Supported resources: Patient, Observation, Organization and AllergyIntolerance.</p><p>Supported operations: read and patient-based searches.</p></div>"
+  },
+  "status": "active",
+  "date": "2026-10-15",
+  "kind": "instance",
+  "software": {
+    "name": "EmergencyMedicalCard",
+    "version": "1.0.0"
+  },
+  "implementation": {
+    "description": "Educational FHIR R4 REST API",
+    "url": "https://localhost:7124/fhir"
+  },
+  "fhirVersion": "4.0.1",
+  "format": [ "json" ],
+  "rest": [
+    {
+      "mode": "server",
+      "resource": [
+        {
+          "type": "Patient",
+          "interaction": [ { "code": "read" } ]
+        },
+        {
+          "type": "Observation",
+          "interaction": [
+            { "code": "read" },
+            { "code": "search-type" }
+          ],
+          "searchParam": [
+            {
+              "name": "patient",
+              "type": "reference",
+              "documentation": "Search observations by patient"
+            }
+          ]
+        },
+        {
+          "type": "Organization",
+          "interaction": [ { "code": "read" } ]
+        },
+        {
+          "type": "AllergyIntolerance",
+          "interaction": [
+            { "code": "read" },
+            { "code": "search-type" }
+          ],
+          "searchParam": [
+            {
+              "name": "patient",
+              "type": "reference",
+              "documentation": "Search allergies by patient"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
