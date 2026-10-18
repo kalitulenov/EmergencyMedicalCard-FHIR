@@ -326,9 +326,288 @@ app.MapGet("/fhir/AllergyIntolerance",
 
 //  ---------------------------------------------------------
 
+app.MapGet("/fhir/Condition/{id}", (string id) =>
+{
+    var conditions = new List<Condition>
+    {
+        ConditionFactory.CreateHypertension(),
+        ConditionFactory.CreateDiabetes()
+    };
+
+    var condition = conditions.FirstOrDefault(c => c.Id == id);
+
+    var serializer = new FhirJsonSerializer();
+
+    if (condition == null)
+    {
+        var outcome = OperationOutcomeFactory.NotFound(
+            "Condition", id);
+
+        return Results.Text(
+            serializer.SerializeToString(outcome),
+            "application/fhir+json",
+            statusCode: StatusCodes.Status404NotFound
+        );
+    }
+
+    return Results.Text(
+        serializer.SerializeToString(condition),
+        "application/fhir+json"
+    );
+});
 
 //  ---------------------------------------------------------
 
+app.MapGet("/fhir/Condition", (string? patient) =>
+{
+    var serializer = new FhirJsonSerializer();
+
+    if (string.IsNullOrWhiteSpace(patient))
+    {
+        var outcome = OperationOutcomeFactory.BadRequest(
+            "Missing required search parameter: patient");
+
+        return Results.Text(
+            serializer.SerializeToString(outcome),
+            "application/fhir+json",
+            statusCode: StatusCodes.Status400BadRequest
+        );
+    }
+
+    var conditions = new List<Condition>
+    {
+        ConditionFactory.CreateHypertension(),
+        ConditionFactory.CreateDiabetes()
+    };
+
+    var patientReference = patient.StartsWith("Patient/")
+        ? patient
+        : $"Patient/{patient}";
+
+    var matches = conditions
+        .Where(c => c.Subject?.Reference == patientReference)
+        .ToList();
+
+    var bundle = new Bundle
+    {
+        Type = Bundle.BundleType.Searchset,
+        Total = matches.Count,
+
+        Entry = matches.Select(c => new Bundle.EntryComponent
+        {
+            FullUrl =
+                $"https://hospital.example.org/fhir/Condition/{c.Id}",
+
+            Resource = c,
+
+            Search = new Bundle.SearchComponent
+            {
+                Mode = Bundle.SearchEntryMode.Match
+            }
+        }).ToList()
+    };
+
+    return Results.Text(
+        serializer.SerializeToString(bundle),
+        "application/fhir+json"
+    );
+});
+
+//  ---------------------------------------------------------
+app.MapGet("/fhir/MedicationStatement/{id}", (string id) =>
+{
+    var medications = new List<MedicationStatement>
+    {
+        MedicationFactory.CreateLisinopril(),
+        MedicationFactory.CreateAtorvastatin()
+    };
+
+    var medication = medications.FirstOrDefault(m => m.Id == id);
+
+    var serializer = new FhirJsonSerializer();
+
+    if (medication == null)
+    {
+        var outcome = OperationOutcomeFactory.NotFound(
+            "MedicationStatement", id);
+
+        return Results.Text(
+            serializer.SerializeToString(outcome),
+            "application/fhir+json",
+            statusCode: StatusCodes.Status404NotFound
+        );
+    }
+
+    return Results.Text(
+        serializer.SerializeToString(medication),
+        "application/fhir+json"
+    );
+});
+
+//  ---------------------------------------------------------
+app.MapGet("/fhir/MedicationStatement", (string? patient) =>
+{
+    var serializer = new FhirJsonSerializer();
+
+    if (string.IsNullOrWhiteSpace(patient))
+    {
+        var outcome = OperationOutcomeFactory.BadRequest(
+            "Missing required search parameter: patient");
+
+        return Results.Text(
+            serializer.SerializeToString(outcome),
+            "application/fhir+json",
+            statusCode: StatusCodes.Status400BadRequest
+        );
+    }
+
+    var medications = new List<MedicationStatement>
+    {
+        MedicationFactory.CreateLisinopril(),
+        MedicationFactory.CreateAtorvastatin()
+    };
+
+    var patientReference = patient.StartsWith("Patient/")
+        ? patient
+        : $"Patient/{patient}";
+
+    var matches = medications
+        .Where(m => m.Subject?.Reference == patientReference)
+        .ToList();
+
+    var bundle = new Bundle
+    {
+        Type = Bundle.BundleType.Searchset,
+        Total = matches.Count,
+
+        Entry = matches.Select(m => new Bundle.EntryComponent
+        {
+            FullUrl =
+                $"https://hospital.example.org/fhir/MedicationStatement/{m.Id}",
+
+            Resource = m,
+
+            Search = new Bundle.SearchComponent
+            {
+                Mode = Bundle.SearchEntryMode.Match
+            }
+        }).ToList()
+    };
+
+    return Results.Text(
+        serializer.SerializeToString(bundle),
+        "application/fhir+json"
+    );
+});
+
+//  ---------------------------------------------------------
+
+app.MapGet("/fhir/MedicationRequest/{id}", (string id) =>
+{
+    var medicationRequest =
+        MedicationRequestFactory.CreateLisinoprilRequest();
+
+    var serializer = new FhirJsonSerializer();
+
+    if (medicationRequest.Id != id)
+    {
+        var outcome = OperationOutcomeFactory.NotFound(
+            "MedicationRequest", id);
+
+        return Results.Text(
+            serializer.SerializeToString(outcome),
+            "application/fhir+json",
+            statusCode: StatusCodes.Status404NotFound
+        );
+    }
+
+    return Results.Text(
+        serializer.SerializeToString(medicationRequest),
+        "application/fhir+json"
+    );
+});
+
+//  ---------------------------------------------------------
+
+app.MapGet("/fhir/MedicationRequest", (string? patient) =>
+{
+    var serializer = new FhirJsonSerializer();
+
+    if (string.IsNullOrWhiteSpace(patient))
+    {
+        var outcome = OperationOutcomeFactory.BadRequest(
+            "Missing required search parameter: patient");
+
+        return Results.Text(
+            serializer.SerializeToString(outcome),
+            "application/fhir+json",
+            statusCode: StatusCodes.Status400BadRequest
+        );
+    }
+
+    var requests = new List<MedicationRequest>
+    {
+        MedicationRequestFactory.CreateLisinoprilRequest()
+    };
+
+    var patientReference = patient.StartsWith("Patient/")
+        ? patient
+        : $"Patient/{patient}";
+
+    var matches = requests
+        .Where(r => r.Subject?.Reference == patientReference)
+        .ToList();
+
+    var bundle = new Bundle
+    {
+        Type = Bundle.BundleType.Searchset,
+        Total = matches.Count,
+
+        Entry = matches.Select(r => new Bundle.EntryComponent
+        {
+            FullUrl =
+                $"https://hospital.example.org/fhir/MedicationRequest/{r.Id}",
+
+            Resource = r,
+
+            Search = new Bundle.SearchComponent
+            {
+                Mode = Bundle.SearchEntryMode.Match
+            }
+        }).ToList()
+    };
+
+    return Results.Text(
+        serializer.SerializeToString(bundle),
+        "application/fhir+json"
+    );
+});
+
+
+//  ---------------------------------------------------------
+app.MapGet("/fhir/Practitioner/{id}", (string id) =>
+{
+    var practitioner = PractitionerFactory.CreateDrBrown();
+
+    var serializer = new FhirJsonSerializer();
+
+    if (practitioner.Id != id)
+    {
+        var outcome = OperationOutcomeFactory.NotFound(
+            "Practitioner", id);
+
+        return Results.Text(
+            serializer.SerializeToString(outcome),
+            "application/fhir+json",
+            statusCode: StatusCodes.Status404NotFound
+        );
+    }
+
+    return Results.Text(
+        serializer.SerializeToString(practitioner),
+        "application/fhir+json"
+    );
+});
 
 //  ---------------------------------------------------------
 

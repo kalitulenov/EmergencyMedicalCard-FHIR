@@ -3,7 +3,7 @@
   "id": "emergency-medical-card-capabilities",
   "text": {
     "status": "generated",
-    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>EmergencyMedicalCard FHIR R4 Server</b></p><p>Supported resources: Patient, Observation, Organization and AllergyIntolerance.</p><p>Supported operations: read and patient-based searches.</p></div>"
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>EmergencyMedicalCard FHIR R4 Server</b></p><p>Supported resources: Patient, Observation, Organization, AllergyIntolerance, Condition, MedicationStatement, MedicationRequest and Practitioner.</p><p>Supported operations: read and patient-based searches.</p></div>"
   },
   "status": "active",
   "date": "2026-10-15",
@@ -57,6 +57,52 @@
               "documentation": "Search allergies by patient"
             }
           ]
+        },
+        {
+          "type": "Condition",
+          "interaction": [
+            { "code": "read" },
+            { "code": "search-type" }
+          ],
+          "searchParam": [
+            {
+              "name": "patient",
+              "type": "reference",
+              "documentation": "Search conditions by patient"
+            }
+          ]
+        },
+        {
+          "type": "MedicationStatement",
+          "interaction": [
+            { "code": "read" },
+            { "code": "search-type" }
+          ],
+          "searchParam": [
+            {
+              "name": "patient",
+              "type": "reference",
+              "documentation": "Search medication statements by patient"
+            }
+          ]
+        },
+        {
+          "type": "MedicationRequest",
+          "interaction": [
+            { "code": "read" },
+            { "code": "search-type" }
+          ],
+          "searchParam": [
+            {
+              "name": "patient",
+              "type": "reference",
+              "documentation": "Search medication requests by patient"
+            }
+          ]
+        },
+        {
+          "type": "Practitioner",
+          "interaction": [ { "code": "read" } ]
         }
       ]
     }

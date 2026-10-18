@@ -28,7 +28,8 @@ public static class CapabilityStatementFactory
                     "<div xmlns=\"http://www.w3.org/1999/xhtml\">" +
                     "<p><b>EmergencyMedicalCard FHIR R4 Server</b></p>" +
                     "<p>Supported resources: Patient, Observation, " +
-                    "Organization and AllergyIntolerance.</p>" +
+                    "Organization, AllergyIntolerance, Condition, " +
+                    "MedicationStatement, MedicationRequest and Practitioner.</p>" +
                     "<p>Supported operations: read and patient-based searches.</p>" +
                     "</div>"
             },
@@ -141,7 +142,109 @@ public static class CapabilityStatementFactory
                                     Documentation = "Search allergies by patient"
                                 }
                             }
+                        },
+
+                        new CapabilityStatement.ResourceComponent
+                        {
+                            Type = "Condition",
+
+                            Interaction = new List<
+                                CapabilityStatement.ResourceInteractionComponent>
+                            {
+                                new CapabilityStatement.ResourceInteractionComponent
+                                {
+                                    Code = CapabilityStatement.TypeRestfulInteraction.Read
+                                },
+                                new CapabilityStatement.ResourceInteractionComponent
+                                {
+                                    Code = CapabilityStatement.TypeRestfulInteraction.SearchType
+                                }
+                            },
+
+                            SearchParam = new List<
+                                CapabilityStatement.SearchParamComponent>
+                            {
+                                new CapabilityStatement.SearchParamComponent
+                                {
+                                    Name = "patient",
+                                    Type = SearchParamType.Reference,
+                                    Documentation = "Search conditions by patient"
+                                }
+                            }
+                        },
+
+                        new CapabilityStatement.ResourceComponent
+                        {
+                            Type = "MedicationStatement",
+
+                            Interaction = new List<
+                                CapabilityStatement.ResourceInteractionComponent>
+                            {
+                                new CapabilityStatement.ResourceInteractionComponent
+                                {
+                                    Code = CapabilityStatement.TypeRestfulInteraction.Read
+                                },
+                                new CapabilityStatement.ResourceInteractionComponent
+                                {
+                                    Code = CapabilityStatement.TypeRestfulInteraction.SearchType
+                                }
+                            },
+
+                            SearchParam = new List<
+                                CapabilityStatement.SearchParamComponent>
+                            {
+                                new CapabilityStatement.SearchParamComponent
+                                {
+                                    Name = "patient",
+                                    Type = SearchParamType.Reference,
+                                    Documentation = "Search medication statements by patient"
+                                }
+                            }
+                        },
+
+                        new CapabilityStatement.ResourceComponent
+                        {
+                            Type = "MedicationRequest",
+
+                            Interaction = new List<
+                                CapabilityStatement.ResourceInteractionComponent>
+                            {
+                                new CapabilityStatement.ResourceInteractionComponent
+                                {
+                                    Code = CapabilityStatement.TypeRestfulInteraction.Read
+                                },
+                                new CapabilityStatement.ResourceInteractionComponent
+                                {
+                                    Code = CapabilityStatement.TypeRestfulInteraction.SearchType
+                                }
+                            },
+
+                            SearchParam = new List<
+                                CapabilityStatement.SearchParamComponent>
+                            {
+                                new CapabilityStatement.SearchParamComponent
+                                {
+                                    Name = "patient",
+                                    Type = SearchParamType.Reference,
+                                    Documentation = "Search medication requests by patient"
+                                }
+                            }
+                        },
+
+                        new CapabilityStatement.ResourceComponent
+                        {
+                            Type = "Practitioner",
+
+                            Interaction = new List<
+                                CapabilityStatement.ResourceInteractionComponent>
+                            {
+                                new CapabilityStatement.ResourceInteractionComponent
+                                {
+                                    Code = CapabilityStatement.TypeRestfulInteraction.Read
+                                }
+                            }
                         }
+
 
 
                     }
