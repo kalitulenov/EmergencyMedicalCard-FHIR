@@ -139,9 +139,7 @@ app.MapGet("/fhir/Observation",
             Entry = matchingObservations.Select(o =>
                 new Bundle.EntryComponent
                 {
-                    FullUrl =
-                        $"https://hospital.example.org/fhir/Observation/{o.Id}",
-
+                    FullUrl = FhirUrlHelper.GetResourceUrl(context.Request,"Observation",o.Id),
                     Resource = o,
 
                     Search = new Bundle.SearchComponent
@@ -164,10 +162,9 @@ app.MapGet("/fhir/Observation",
 
 app.MapGet("/fhir/metadata", (HttpContext context) =>
 {
-    var request = context.Request;
+  //  var request = context.Request;
 
-    var baseUrl =
-        $"{request.Scheme}://{request.Host}{request.PathBase}/fhir";
+    var baseUrl = FhirUrlHelper.GetBaseUrl(context.Request);
 
     var capability = CapabilityStatementFactory.Create(baseUrl);
 
@@ -267,8 +264,7 @@ app.MapGet("/fhir/AllergyIntolerance/{id}", (string id) =>
 
 //  ---------------------------------------------------------
 
-app.MapGet("/fhir/AllergyIntolerance",
-    (string? patient) =>
+app.MapGet("/fhir/AllergyIntolerance",(string? patient, HttpContext context) =>
     {
         var serializer = new FhirJsonSerializer();
 
@@ -305,9 +301,7 @@ app.MapGet("/fhir/AllergyIntolerance",
 
             Entry = matches.Select(a => new Bundle.EntryComponent
             {
-                FullUrl =
-                    $"https://hospital.example.org/fhir/AllergyIntolerance/{a.Id}",
-
+                FullUrl = FhirUrlHelper.GetResourceUrl(context.Request, "AllergyIntolerance",a.Id),
                 Resource = a,
 
                 Search = new Bundle.SearchComponent
@@ -358,8 +352,7 @@ app.MapGet("/fhir/Condition/{id}", (string id) =>
 
 //  ---------------------------------------------------------
 
-app.MapGet("/fhir/Condition", (string? patient) =>
-{
+app.MapGet("/fhir/Condition", (string? patient, HttpContext context) => {
     var serializer = new FhirJsonSerializer();
 
     if (string.IsNullOrWhiteSpace(patient))
@@ -395,8 +388,7 @@ app.MapGet("/fhir/Condition", (string? patient) =>
 
         Entry = matches.Select(c => new Bundle.EntryComponent
         {
-            FullUrl =
-                $"https://hospital.example.org/fhir/Condition/{c.Id}",
+            FullUrl = FhirUrlHelper.GetResourceUrl(context.Request,"Condition",c.Id),
 
             Resource = c,
 
@@ -445,8 +437,7 @@ app.MapGet("/fhir/MedicationStatement/{id}", (string id) =>
 });
 
 //  ---------------------------------------------------------
-app.MapGet("/fhir/MedicationStatement", (string? patient) =>
-{
+app.MapGet("/fhir/MedicationStatement",(string? patient, HttpContext context) => {
     var serializer = new FhirJsonSerializer();
 
     if (string.IsNullOrWhiteSpace(patient))
@@ -482,9 +473,7 @@ app.MapGet("/fhir/MedicationStatement", (string? patient) =>
 
         Entry = matches.Select(m => new Bundle.EntryComponent
         {
-            FullUrl =
-                $"https://hospital.example.org/fhir/MedicationStatement/{m.Id}",
-
+            FullUrl = FhirUrlHelper.GetResourceUrl(context.Request, "MedicationStatement",m.Id),
             Resource = m,
 
             Search = new Bundle.SearchComponent
@@ -529,8 +518,7 @@ app.MapGet("/fhir/MedicationRequest/{id}", (string id) =>
 
 //  ---------------------------------------------------------
 
-app.MapGet("/fhir/MedicationRequest", (string? patient) =>
-{
+app.MapGet("/fhir/MedicationRequest",(string? patient, HttpContext context) => {
     var serializer = new FhirJsonSerializer();
 
     if (string.IsNullOrWhiteSpace(patient))
@@ -565,9 +553,7 @@ app.MapGet("/fhir/MedicationRequest", (string? patient) =>
 
         Entry = matches.Select(r => new Bundle.EntryComponent
         {
-            FullUrl =
-                $"https://hospital.example.org/fhir/MedicationRequest/{r.Id}",
-
+            FullUrl = FhirUrlHelper.GetResourceUrl(context.Request, "MedicationRequest", r.Id),
             Resource = r,
 
             Search = new Bundle.SearchComponent
