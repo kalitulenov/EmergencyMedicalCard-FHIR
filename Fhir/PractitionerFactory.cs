@@ -22,10 +22,18 @@ public static class PractitionerFactory
 
             Identifier = new List<Identifier>
             {
+                // Local hospital identifier
                 new Identifier
                 {
                     System = "urn:oid:2.16.840.1.113883.19.999.2",
                     Value = "DOC-001"
+                },
+
+                // Demonstration NPI — not a real provider identity
+                new Identifier
+                {
+                    System = "http://hl7.org/fhir/sid/us-npi",
+                    Value = "1234567893"
                 }
             },
 

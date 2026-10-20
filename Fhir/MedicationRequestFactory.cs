@@ -68,17 +68,14 @@ public static class MedicationRequestFactory
             {
                 Coding = new List<Coding>
                 {
-                    new Coding
-                    {
-                        System =
-                            "http://www.nlm.nih.gov/research/umls/rxnorm",
-
-                        Code = "314076",
-
-                        Display =
-                            "lisinopril 10 MG Oral Tablet"
-                    }
+                        new Coding
+                        {
+                            System = "http://www.nlm.nih.gov/research/umls/rxnorm",
+                            Code = "314076",
+                            Display = "lisinopril 10 MG Oral Tablet"
+                        }
                 },
+
 
                 Text = "Lisinopril 10 mg"
             },

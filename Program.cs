@@ -2,12 +2,15 @@ using EmergencyMedicalCard.Components;
 using EmergencyMedicalCard.Fhir;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddHttpClient(); // Добавляем IHttpClientFactory для создания HttpClient
 
 var app = builder.Build();
 
@@ -594,6 +597,220 @@ app.MapGet("/fhir/Practitioner/{id}", (string id) =>
         "application/fhir+json"
     );
 });
+
+//  --------------------------------------------------------- TEST 
+app.MapGet("/fhir/test-references",
+    async (
+        string? resource,
+        HttpContext context,
+        IHttpClientFactory clientFactory) =>
+    {
+        if (string.IsNullOrWhiteSpace(resource))
+        {
+            return Results.BadRequest(
+                "Resource parameter is required.");
+        }
+
+        var parts = resource.Split('/');
+
+        if (parts.Length != 2 ||
+            string.IsNullOrWhiteSpace(parts[0]) ||
+            string.IsNullOrWhiteSpace(parts[1]) ||
+            parts.Any(p => p is "." or ".." ||
+                           p.Contains('?') || p.Contains('#')))
+        {
+            return Results.BadRequest(
+                "Expected format: ResourceType/id");
+        }
+
+        var client = clientFactory.CreateClient();
+
+        var baseUrl =
+            FhirUrlHelper.GetBaseUrl(context.Request);
+
+        var results =
+            await FhirApiReferenceValidator.ValidateAsync(
+                client,
+                baseUrl,
+                resource);
+
+        return Results.Json(results);
+    });
+
+//  ------------------------------ TEST все ресурсы, которые ссылаются на другие ресурсы в FHIR API
+
+app.MapGet("/fhir/test-all-references",
+    async (
+        HttpContext context,
+        IHttpClientFactory clientFactory) =>
+    {
+        var client = clientFactory.CreateClient();
+
+        var baseUrl =
+            FhirUrlHelper.GetBaseUrl(context.Request);
+
+        // Создаём ресурсы медицинской карты
+        var patient = PatientFactory.CreatePatient();
+
+        var allergies = new List<AllergyIntolerance>
+            {
+                AllergyFactory.CreatePenicillinAllergy(),
+                AllergyFactory.CreatePeanutAllergy()
+            };
+
+        var conditions = new List<Condition>
+            {
+                ConditionFactory.CreateHypertension(),
+                ConditionFactory.CreateDiabetes()
+            };
+
+        var medications = new List<MedicationStatement>
+            {
+                MedicationFactory.CreateLisinopril(),
+                MedicationFactory.CreateAtorvastatin()
+            };
+
+        var observations = new List<Observation>
+            {
+                ObservationFactory.CreateBloodGroup(),
+                ObservationFactory.CreateRhFactor()
+            };
+
+        var practitioners = new List<Practitioner>
+            {
+                PractitionerFactory.CreateDrBrown()
+            };
+
+        var medicationRequests = new List<MedicationRequest>
+            {
+                MedicationRequestFactory.CreateLisinoprilRequest()
+            };
+
+        // Формируем Bundle
+        var bundle = BundleFactory.CreateEmergencyBundle(
+            patient,
+            allergies,
+            conditions,
+            medications,
+            observations,
+            practitioners,
+            medicationRequests);
+
+        // Преобразуем Bundle в JSON
+        var serializer = new FhirJsonSerializer();
+
+        var json = serializer.SerializeToString(bundle);
+
+        using var document = JsonDocument.Parse(json);
+
+        // Автоматически проверяем все ресурсы
+        var report =
+            await FhirApiReferenceValidator.ValidateAllAsync(
+                client,
+                baseUrl,
+                document.RootElement);
+
+        var summary =
+            FhirApiReferenceValidator.CreateSummary(report);
+
+        return Results.Json(new
+        {
+            Summary = summary,
+            Resources = report
+        });
+    });
+
+//  ---------------------------------------------------------
+
+
+
+app.MapGet("/fhir/test-extract-references", () =>
+{
+    var medicationRequest =
+        MedicationRequestFactory.CreateLisinoprilRequest();
+
+    var serializer = new FhirJsonSerializer();
+
+    var json = serializer.SerializeToString(
+        medicationRequest);
+
+    using var document = JsonDocument.Parse(json);
+
+    var references =
+        FhirApiReferenceValidator.ExtractReferences(
+            document.RootElement);
+
+    return Results.Json(references);
+});
+
+//  ---------------------------------------------------------
+app.MapGet("/fhir/Bundle/{id}", (string id) =>
+{
+    var serializer = new FhirJsonSerializer();
+
+    if (id != "emergency-bundle-001")
+    {
+        var outcome = OperationOutcomeFactory.NotFound(
+            "Bundle", id);
+
+        return Results.Text(
+            serializer.SerializeToString(outcome),
+            "application/fhir+json",
+            statusCode: StatusCodes.Status404NotFound);
+    }
+
+    var patient = PatientFactory.CreatePatient();
+
+    var allergies = new List<AllergyIntolerance>
+    {
+        AllergyFactory.CreatePenicillinAllergy(),
+        AllergyFactory.CreatePeanutAllergy()
+    };
+
+    var conditions = new List<Condition>
+    {
+        ConditionFactory.CreateHypertension(),
+        ConditionFactory.CreateDiabetes()
+    };
+
+    var medications = new List<MedicationStatement>
+    {
+        MedicationFactory.CreateLisinopril(),
+        MedicationFactory.CreateAtorvastatin()
+    };
+
+    var observations = new List<Observation>
+    {
+        ObservationFactory.CreateBloodGroup(),
+        ObservationFactory.CreateRhFactor()
+    };
+
+    var practitioners = new List<Practitioner>
+    {
+        PractitionerFactory.CreateDrBrown()
+    };
+
+    var medicationRequests = new List<MedicationRequest>
+    {
+        MedicationRequestFactory.CreateLisinoprilRequest()
+    };
+
+    var bundle = BundleFactory.CreateEmergencyBundle(
+        patient,
+        allergies,
+        conditions,
+        medications,
+        observations,
+        practitioners,
+        medicationRequests);
+
+    return Results.Text(
+        serializer.SerializeToString(bundle),
+        "application/fhir+json");
+});
+
+//  ---------------------------------------------------------
+
 
 //  ---------------------------------------------------------
 
