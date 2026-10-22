@@ -30,7 +30,8 @@ public static class CapabilityStatementFactory
                     "<p>Supported resources: Patient, Observation, " +
                     "Organization, AllergyIntolerance, Condition, " +
                     "MedicationStatement, MedicationRequest and Practitioner.</p>" +
-                    "<p>Supported operations: read and patient-based searches.</p>" +
+                    "<p>Supported operations: read, patient-based searches, " +
+                    "and Patient/$everything.</p>" +
                     "</div>"
             },
             Software = new CapabilityStatement.SoftwareComponent
@@ -64,6 +65,18 @@ public static class CapabilityStatementFactory
                                 {
                                     Code =
                                         CapabilityStatement.TypeRestfulInteraction.Read
+                                }
+                            },
+
+                            Operation = new List<
+                                CapabilityStatement.OperationComponent>
+                            {
+                                new CapabilityStatement.OperationComponent
+                                {
+                                    Name = "everything",
+
+                                    Definition =
+                                        "http://hl7.org/fhir/OperationDefinition/Patient-everything"
                                 }
                             }
                         },

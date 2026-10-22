@@ -3,7 +3,7 @@
   "id": "emergency-medical-card-capabilities",
   "text": {
     "status": "generated",
-    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>EmergencyMedicalCard FHIR R4 Server</b></p><p>Supported resources: Patient, Observation, Organization, AllergyIntolerance, Condition, MedicationStatement, MedicationRequest and Practitioner.</p><p>Supported operations: read and patient-based searches.</p></div>"
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>EmergencyMedicalCard FHIR R4 Server</b></p><p>Supported resources: Patient, Observation, Organization, AllergyIntolerance, Condition, MedicationStatement, MedicationRequest and Practitioner.</p><p>Supported operations: read, patient-based searches, and Patient/$everything.</p></div>"
   },
   "status": "active",
   "date": "2026-10-15",
@@ -24,7 +24,13 @@
       "resource": [
         {
           "type": "Patient",
-          "interaction": [ { "code": "read" } ]
+          "interaction": [ { "code": "read" } ],
+          "operation": [
+            {
+              "name": "everything",
+              "definition": "http://hl7.org/fhir/OperationDefinition/Patient-everything"
+            }
+          ]
         },
         {
           "type": "Observation",

@@ -810,6 +810,208 @@ app.MapGet("/fhir/Bundle/{id}", (string id) =>
 });
 
 //  ---------------------------------------------------------
+app.MapGet("/fhir/Patient/{id}/$everything", (string id, HttpRequest request) =>
+{
+    var serializer = new FhirJsonSerializer();
+
+    if (id != "patient-001")
+    {
+        var outcome = OperationOutcomeFactory.NotFound(
+            "Patient", id);
+
+        return Results.Text(
+            serializer.SerializeToString(outcome),
+            "application/fhir+json",
+            statusCode: StatusCodes.Status404NotFound);
+    }
+
+    var patient = PatientFactory.CreatePatient();
+
+    var bundle = BundleFactory.CreateEmergencyBundle(
+        patient,
+        new List<AllergyIntolerance>
+        {
+            AllergyFactory.CreatePenicillinAllergy(),
+            AllergyFactory.CreatePeanutAllergy()
+        },
+        new List<Condition>
+        {
+            ConditionFactory.CreateHypertension(),
+            ConditionFactory.CreateDiabetes()
+        },
+        new List<MedicationStatement>
+        {
+            MedicationFactory.CreateLisinopril(),
+            MedicationFactory.CreateAtorvastatin()
+        },
+        new List<Observation>
+        {
+            ObservationFactory.CreateBloodGroup(),
+            ObservationFactory.CreateRhFactor()
+        },
+        new List<Practitioner>
+        {
+            PractitionerFactory.CreateDrBrown()
+        },
+        new List<MedicationRequest>
+        {
+            MedicationRequestFactory.CreateLisinoprilRequest()
+        });
+
+    // The Patient/$everything operation returns a searchset Bundle.
+    bundle.Type = Bundle.BundleType.Searchset;
+    bundle.Total = bundle.Entry.Count;
+
+    // Give the response Bundle its own identity.
+    bundle.Id = Guid.NewGuid().ToString();
+
+    var baseUrl = FhirUrlHelper.GetBaseUrl(request);
+
+    bundle.Link = new List<Bundle.LinkComponent>
+    {
+        new Bundle.LinkComponent
+        {
+            Relation = "self",
+            Url = $"{baseUrl}/Patient/{id}/$everything"
+        }
+    };
+
+    const string oldBaseUrl = "https://hospital.example.org/fhir/";
+
+    foreach (var entry in bundle.Entry)
+    {
+        if (entry.Resource == null)
+            continue;
+
+        entry.Search = new Bundle.SearchComponent
+        {
+            Mode = Bundle.SearchEntryMode.Match
+        };
+
+        var resourceType = entry.Resource.TypeName;
+        var resourceId = entry.Resource.Id;
+
+        if (string.IsNullOrWhiteSpace(resourceId))
+            continue;
+
+        entry.FullUrl = $"{baseUrl}/{resourceType}/{resourceId}";
+
+        // Update references in known resource types
+        switch (entry.Resource)
+        {
+            case AllergyIntolerance allergy:
+                UpdateReference(allergy.Patient);
+                break;
+
+            case Condition condition:
+                UpdateReference(condition.Subject);
+                break;
+
+            case MedicationStatement medication:
+                UpdateReference(medication.Subject);
+                break;
+
+            case MedicationRequest requestResource:
+                UpdateReference(requestResource.Subject);
+                UpdateReference(requestResource.Requester);
+
+                foreach (var reason in requestResource.ReasonReference ?? [])
+                    UpdateReference(reason);
+                break;
+
+            case Observation observation:
+                UpdateReference(observation.Subject);
+
+                foreach (var performer in observation.Performer ?? [])
+                    UpdateReference(performer);
+                break;
+        }
+    }
+
+    void UpdateReference(ResourceReference? reference)
+    {
+        if (reference?.Reference?.StartsWith(
+            oldBaseUrl, StringComparison.Ordinal) == true)
+        {
+            reference.Reference =
+                baseUrl + "/" +
+                reference.Reference.Substring(oldBaseUrl.Length);
+        }
+    }
+
+
+    return Results.Text(
+        serializer.SerializeToString(bundle),
+        "application/fhir+json");
+});
+
+//  ---------------------------------------------------------
+app.MapGet("/fhir/test-everything", async (
+    HttpRequest request,
+    IHttpClientFactory httpClientFactory) =>
+{
+    var client = httpClientFactory.CreateClient();
+    var baseUrl = FhirUrlHelper.GetBaseUrl(request);
+
+    using var metadataResponse =
+        await client.GetAsync($"{baseUrl}/metadata");
+
+    using var everythingResponse =
+        await client.GetAsync(
+            $"{baseUrl}/Patient/patient-001/$everything");
+
+    if (!metadataResponse.IsSuccessStatusCode ||
+        !everythingResponse.IsSuccessStatusCode)
+    {
+        return Results.Json(new
+        {
+            success = false,
+            metadataStatus = (int)metadataResponse.StatusCode,
+            everythingStatus = (int)everythingResponse.StatusCode
+        });
+    }
+
+    using var metadata = JsonDocument.Parse(
+        await metadataResponse.Content.ReadAsStringAsync());
+
+    using var everything = JsonDocument.Parse(
+        await everythingResponse.Content.ReadAsStringAsync());
+
+    var patient = metadata.RootElement
+        .GetProperty("rest")[0]
+        .GetProperty("resource")
+        .EnumerateArray()
+        .First(r => r.GetProperty("type").GetString() == "Patient");
+
+    var operationDeclared =
+        patient.TryGetProperty("operation", out var operations) &&
+        operations.EnumerateArray().Any(op =>
+            op.GetProperty("name").GetString() == "everything");
+
+    var root = everything.RootElement;
+
+    var bundleType = root.GetProperty("type").GetString();
+    var total = root.GetProperty("total").GetInt32();
+    var entryCount = root.GetProperty("entry").GetArrayLength();
+
+    return Results.Json(new
+    {
+        success = operationDeclared &&
+                  bundleType == "searchset" &&
+                  total == 12 &&
+                  entryCount == 12,
+
+        operationDeclared,
+        bundleType,
+        total,
+        entryCount
+    });
+});
+
+//  ---------------------------------------------------------
+
+
+//  ---------------------------------------------------------
 
 
 //  ---------------------------------------------------------
