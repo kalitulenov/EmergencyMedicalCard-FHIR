@@ -2,7 +2,9 @@ using EmergencyMedicalCard.Components;
 using EmergencyMedicalCard.Fhir;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
+using System.Reflection;
 using System.Text.Json;
+using System.Xml.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,8 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddHttpClient(); // Добавляем IHttpClientFactory для создания HttpClient
+
+builder.Services.AddHttpClient<FhirClientService>();
 
 var app = builder.Build();
 
@@ -1009,13 +1013,762 @@ app.MapGet("/fhir/test-everything", async (
 });
 
 //  ---------------------------------------------------------
+app.MapGet("/fhir/test-client", async (
+    FhirClientService fhirClient,
+    HttpRequest request) =>
+{
+    var baseUrl = FhirUrlHelper.GetBaseUrl(request);
 
+    var patient = await fhirClient.GetPatientAsync(
+        baseUrl,
+        "patient-001");
+
+    if (patient == null)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.Json(new
+    {
+        patient.Id,
+        Name = patient.Name?.FirstOrDefault()?.ToString(),
+        Gender = patient.Gender?.ToString()
+    });
+});
+
+//  --------------------------------------------------------- ПОЛУЧАЕМ ДАННЫЕ ИЗ ВНЕШНЕГО СЕРВЕРА
+app.MapGet("/fhir/test-external-client", async (
+    FhirClientService fhirClient) =>
+{
+    const string baseUrl = "https://hapi.fhir.org/baseR4";
+
+    try
+    {
+        var patient = await fhirClient.GetPatientAsync(
+            baseUrl,
+            "example");
+
+        if (patient == null)
+        {
+            return Results.Json(new
+            {
+                success = false,
+                message = "Patient/example not found"
+            });
+        }
+
+        return Results.Json(new
+        {
+            success = true,
+            source = baseUrl,
+            patient.Id,
+            Name = patient.Name?.FirstOrDefault()?.ToString(),
+            Gender = patient.Gender?.ToString()
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            success = false,
+            error = ex.Message
+        });
+    }
+});
 
 //  ---------------------------------------------------------
 
+app.MapGet("/fhir/test-external-conditions", async (
+    FhirClientService fhirClient) =>
+{
+    const string baseUrl = "https://hapi.fhir.org/baseR4";
+    const string patientId = "36149";
+
+    try
+    {
+        var bundle = await fhirClient.SearchConditionsAsync(
+            baseUrl, patientId);
+
+        var conditions = bundle.Entry
+            .Where(e => e.Resource is Condition)
+            .Select(e =>
+            {
+                var condition = (Condition)e.Resource;
+
+                return new
+                {
+                    condition.Id,
+                    Code = condition.Code?.Coding?
+                        .FirstOrDefault()?.Code,
+                    Display = condition.Code?.Coding?
+                        .FirstOrDefault()?.Display,
+                    ClinicalStatus = condition.ClinicalStatus?
+                        .Coding?.FirstOrDefault()?.Code
+                };
+            })
+            .ToList();
+
+        return Results.Json(new
+        {
+            success = true,
+            patientId,
+            returned = conditions.Count,
+            conditions
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            success = false,
+            error = ex.Message
+        });
+    }
+});
+
+//  ---------------------------------------------------------
+app.MapGet("/fhir/test-external-search", async (
+    FhirClientService fhirClient) =>
+{
+    const string baseUrl = "https://hapi.fhir.org/baseR4";
+
+    try
+    {
+
+        // Асинхронно ищет пациентов по строке "Smith" через FHIR-клиент.
+        // Из полученного Bundle берёт только записи, чей Resource — это Patient.
+        // Проецирует каждого в анонимный объект { Id, Name, Gender }.
+        // Материализует результат в List.
+
+        var bundle = await fhirClient.SearchPatientsAsync(
+            baseUrl,
+            "Smith");
+
+        var patients = bundle.Entry
+            .Where(e => e.Resource is Patient)
+            .Select(e =>
+            {
+                var patient = (Patient)e.Resource;
+
+                return new
+                {
+                    patient.Id,
+                    Name = patient.Name?
+                        .FirstOrDefault()?
+                        .ToString(),
+                    Gender = patient.Gender?.ToString()
+                };
+            })
+            .ToList();
+
+        var nextUrl = bundle.Link?
+            .FirstOrDefault(link => link.Relation == "next")?
+            .Url;
+
+        return Results.Json(new
+        {
+            success = true,
+            bundleType = bundle.Type?.ToString(),
+            total = bundle.Total,
+            returned = patients.Count,
+            hasNextPage = !string.IsNullOrWhiteSpace(nextUrl),
+            nextUrl,
+            patients
+        });
+
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            success = false,
+            error = ex.Message
+        });
+    }
+});
+
+//  ---------------------------------------------------------
+app.MapGet("/fhir/test-external-page2", async (
+    FhirClientService fhirClient) =>
+{
+    const string baseUrl = "https://hapi.fhir.org/baseR4";
+
+    try
+    {
+        var firstPage = await fhirClient.SearchPatientsAsync(
+            baseUrl, "Smith");
+
+        var nextUrl = firstPage.Link?
+            .FirstOrDefault(link => link.Relation == "next")?
+            .Url;
+
+        if (string.IsNullOrWhiteSpace(nextUrl))
+        {
+            return Results.Json(new
+            {
+                success = true,
+                message = "No next page available"
+            });
+        }
+
+        var secondPage =
+            await fhirClient.GetNextPageAsync(nextUrl);
+
+        var patients = secondPage.Entry
+            .Where(e => e.Resource is Patient)
+            .Select(e =>
+            {
+                var patient = (Patient)e.Resource;
+
+                return new
+                {
+                    patient.Id,
+                    Name = patient.Name?
+                        .FirstOrDefault()?
+                        .ToString()
+                };
+            })
+            .ToList();
+
+        return Results.Json(new
+        {
+            success = true,
+            page = 2,
+            returned = patients.Count,
+            firstPatient = patients.FirstOrDefault(),
+            hasNextPage = secondPage.Link?
+                .Any(link => link.Relation == "next") == true
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            success = false,
+            error = ex.Message
+        });
+    }
+});
+
+//  ---------------------------------------------------------
+app.MapGet("/fhir/test-external-all-pages", async (
+    FhirClientService fhirClient) =>
+{
+    const string baseUrl = "https://hapi.fhir.org/baseR4";
+
+    try
+    {
+        var patients =
+            await fhirClient.SearchAllPatientsAsync(
+                baseUrl,
+                "Smith",
+                maxPages: 3);
+
+        return Results.Json(new
+        {
+            success = true,
+            totalLoaded = patients.Count,
+            firstPatient = patients.FirstOrDefault()?.Id,
+            lastPatient = patients.LastOrDefault()?.Id
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            success = false,
+            error = ex.Message
+        });
+    }
+});
 
 //  ---------------------------------------------------------
 
+app.MapGet("/fhir/test-external-allergies", async (
+    FhirClientService fhirClient) =>
+{
+    const string baseUrl = "https://hapi.fhir.org/baseR4";
+    const string patientId = "36149";
+
+    try
+    {
+        var bundle = await fhirClient.SearchAllergiesAsync(
+            baseUrl, patientId);
+
+        var allergies = bundle.Entry
+            .Where(e => e.Resource is AllergyIntolerance)
+            .Select(e =>
+            {
+                var allergy = (AllergyIntolerance)e.Resource;
+
+                return new
+                {
+                    allergy.Id,
+                    Code = allergy.Code?.Coding?
+                        .FirstOrDefault()?.Code,
+                    Display = allergy.Code?.Text
+                        ?? allergy.Code?.Coding?
+                            .FirstOrDefault()?.Display,
+                    ClinicalStatus = allergy.ClinicalStatus?
+                        .Coding?.FirstOrDefault()?.Code
+                };
+            })
+            .ToList();
+
+        return Results.Json(new
+        {
+            success = true,
+            patientId,
+            returned = allergies.Count,
+            allergies
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            success = false,
+            error = ex.Message
+        });
+    }
+});
+
+//  ---------------------------------------------------------
+
+app.MapGet("/fhir/test-external-medications", async (
+    FhirClientService fhirClient) =>
+{
+    const string baseUrl = "https://hapi.fhir.org/baseR4";
+    const string patientId = "36149";
+
+    try
+    {
+        var bundle =
+            await fhirClient.SearchMedicationRequestsAsync(
+                baseUrl, patientId);
+
+        var medications = bundle.Entry
+            .Where(e => e.Resource is MedicationRequest)
+            .Select(e =>
+            {
+                var medication = (MedicationRequest)e.Resource;
+
+                var medicationName =
+                    (medication.Medication as CodeableConcept)?
+                        .Text
+                    ?? (medication.Medication as CodeableConcept)?
+                        .Coding?.FirstOrDefault()?.Display
+                    ?? (medication.Medication as ResourceReference)?
+                        .Reference;
+
+                return new
+                {
+                    medication.Id,
+                    Medication = medicationName,
+                    Status = medication.Status?.ToString(),
+                    Intent = medication.Intent?.ToString()
+                };
+            })
+            .ToList();
+
+        return Results.Json(new
+        {
+            success = true,
+            patientId,
+            returned = medications.Count,
+            medications
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            success = false,
+            error = ex.Message
+        });
+    }
+});
+
+//  ---------------------------------------------------------
+
+app.MapGet("/fhir/test-external-observations", async (
+    FhirClientService fhirClient) =>
+{
+    const string baseUrl = "https://hapi.fhir.org/baseR4";
+    const string patientId = "36149";
+
+    try
+    {
+        var bundle =
+            await fhirClient.SearchObservationsAsync(
+                baseUrl, patientId);
+
+        var observations = bundle.Entry
+            .Where(e => e.Resource is Observation)
+            .Select(e =>
+            {
+                var observation = (Observation)e.Resource;
+
+                var value = observation.Value switch
+                {
+                    Quantity q =>
+                        $"{q.Value} {q.Unit}",
+
+                    CodeableConcept c =>
+                        c.Text ??
+                        c.Coding?.FirstOrDefault()?.Display,
+
+                    FhirString s => s.Value,
+
+                    _ => observation.Value?.ToString()
+                };
+
+                return new
+                {
+                    observation.Id,
+                    Code = observation.Code?.Coding?
+                        .FirstOrDefault()?.Code,
+                    Display = observation.Code?.Text ??
+                        observation.Code?.Coding?
+                            .FirstOrDefault()?.Display,
+                    Value = value,
+                    Status = observation.Status.ToString()
+                };
+            })
+            .ToList();
+
+        return Results.Json(new
+        {
+            success = true,
+            patientId,
+            returned = observations.Count,
+            observations
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            success = false,
+            error = ex.Message
+        });
+    }
+});
+
+//  ---------------------------------------------------------
+
+app.MapGet("/fhir/test-medical-summary", async (
+    FhirClientService fhirClient) =>
+{
+    const string baseUrl = "https://hapi.fhir.org/baseR4";
+    const string patientId = "36149";
+
+    try
+    {
+        var summary =
+            await fhirClient.GetPatientMedicalSummaryAsync(
+                baseUrl, patientId);
+
+        return Results.Json(new
+        {
+            success = true,
+            summary.PatientId,
+            conditions = summary.Conditions.Count,
+            allergies = summary.Allergies.Count,
+            medications = summary.Medications.Count,
+            observations = summary.Observations.Count
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            success = false,
+            error = ex.Message
+        });
+    }
+});
+
+//  ---------------------------------------------------------
+
+app.MapGet("/fhir/test-external-bundle", async (
+    FhirClientService fhirClient) =>
+{
+    const string baseUrl = "https://hapi.fhir.org/baseR4";
+    const string patientId = "36149";
+
+    try
+    {
+        var summary =
+            await fhirClient.GetPatientMedicalSummaryAsync(
+                baseUrl, patientId);
+
+        var patient = await fhirClient.GetPatientAsync(
+            baseUrl, patientId);
+
+        if (patient == null)
+        {
+            return Results.NotFound(
+                $"Patient/{patientId} not found");
+        }
+
+        var bundle = BundleFactory.CreateMedicalBundle(
+            patient, summary, baseUrl);
+
+        return Results.Json(new
+        {
+            success = true,
+            bundleId = bundle.Id,
+            bundleType = bundle.Type?.ToString(),
+            entryCount = bundle.Entry.Count,
+            resources = bundle.Entry.Select(e => new
+            {
+                resourceType = e.Resource?.TypeName,
+                id = e.Resource?.Id,
+                fullUrl = e.FullUrl
+            })
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            success = false,
+            error = ex.Message
+        });
+    }
+});
+
+//  ---------------------------------------------------------
+
+app.MapGet("/fhir/test-external-references", async (
+    FhirClientService fhirClient) =>
+{
+    const string baseUrl = "https://hapi.fhir.org/baseR4";
+    const string patientId = "36149";
+
+    try
+    {
+        var patient = await fhirClient.GetPatientAsync(
+            baseUrl, patientId);
+
+        if (patient == null)
+        {
+            return Results.NotFound();
+        }
+
+        var summary =
+            await fhirClient.GetPatientMedicalSummaryAsync(
+                baseUrl, patientId);
+
+        var bundle = BundleFactory.CreateMedicalBundle(
+            patient, summary, baseUrl);
+
+        var patientFullUrl =
+            $"{baseUrl}/Patient/{patient.Id}";
+
+        var results = bundle.Entry
+            .Select(e => e.Resource)
+            .OfType<Observation>()
+            .Select(observation =>
+            {
+                var reference =
+                    observation.Subject?.Reference;
+
+                var valid =
+                    reference == $"Patient/{patient.Id}" ||
+                    reference == patientFullUrl;
+
+                return new
+                {
+                    observationId = observation.Id,
+                    subjectReference = reference,
+                    valid
+                };
+            })
+            .ToList();
+
+        return Results.Json(new
+        {
+            success = results.All(r => r.valid)
+                && results.Count > 0,
+            patientId,
+            observationsChecked = results.Count,
+            validReferences = results.Count(r => r.valid),
+            invalidReferences = results.Count(r => !r.valid),
+            results
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            success = false,
+            error = ex.Message
+        });
+    }
+});
+
+//  ---------------------------------------------------------
+
+app.MapGet("/fhir/export-external-bundle", async (
+    FhirClientService fhirClient) =>
+{
+    const string baseUrl = "https://hapi.fhir.org/baseR4";
+    const string patientId = "36149";
+
+    try
+    {
+        var patient = await fhirClient.GetPatientAsync(
+            baseUrl, patientId);
+
+        if (patient == null)
+        {
+            return Results.NotFound(
+                $"Patient/{patientId} not found");
+        }
+
+        patient.Meta ??= new Meta();
+
+        const string usCorePatientProfile =
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient";
+
+        patient.Meta.ProfileElement.Add(
+            new Canonical(usCorePatientProfile));
+
+        var summary =
+            await fhirClient.GetPatientMedicalSummaryAsync(
+                baseUrl, patientId);
+
+        var systolic = summary.Observations
+            .First(o => o.Id == "61195");
+
+        var diastolic = summary.Observations
+            .First(o => o.Id == "61196");
+
+        var normalizedBp = BloodPressureFactory.Create(
+            systolic, diastolic);
+
+        normalizedBp.Subject = new ResourceReference(
+                                    $"{baseUrl.TrimEnd('/')}/Patient/{patient.Id}");
+
+        summary.Observations.Remove(systolic);
+
+        summary.Observations.Remove(diastolic);
+
+        summary.Observations.Add(normalizedBp);
+
+        var heartRate = summary.Observations
+                        .FirstOrDefault(o => o.Id == "61197");
+
+        var glucose = summary.Observations
+                        .FirstOrDefault(o => o.Id == "61198");
+
+        if (glucose != null)
+        {
+            var normalizedGlucose =
+                GlucoseNormalizer.Normalize(glucose);
+
+            summary.Observations.Remove(glucose);
+            summary.Observations.Add(normalizedGlucose);
+        }
+
+        if (heartRate != null)
+        {
+            var normalizedHeartRate =
+                HeartRateNormalizer.Normalize(heartRate);
+
+            summary.Observations.Remove(heartRate);
+            summary.Observations.Add(normalizedHeartRate);
+        }
+
+        var bundle = BundleFactory.CreateMedicalBundle(
+            patient, summary, baseUrl);
+
+        var serializer = new FhirJsonSerializer();
+
+        var json = serializer.SerializeToString(bundle);
+
+        return Results.Text(
+            json,
+            "application/fhir+json");
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            success = false,
+            error = ex.Message
+        });
+    }
+});
+
+//  ---------------------------------------------------------
+
+app.MapGet("/fhir/test-blood-pressure-details", async (
+    FhirClientService fhirClient) =>
+{
+    const string baseUrl = "https://hapi.fhir.org/baseR4";
+
+    var bundle = await fhirClient.SearchObservationsAsync(
+        baseUrl, "36149");
+
+    var results = bundle.Entry
+        .Select(e => e.Resource)
+        .OfType<Observation>()
+        .Where(o => o.Id == "61195" || o.Id == "61196")
+        .Select(o => new
+        {
+            o.Id,
+            Code = o.Code?.Coding?.FirstOrDefault()?.Code,
+            Effective = o.Effective?.ToString(),
+            Issued = o.Issued?.ToString(),
+            Subject = o.Subject?.Reference,
+            Value = (o.Value as Quantity)?.Value,
+            Unit = (o.Value as Quantity)?.Unit,
+            System = (o.Value as Quantity)?.System,
+            UnitCode = (o.Value as Quantity)?.Code,
+            Categories = o.Category.SelectMany(
+                c => c.Coding.Select(x => new
+                {
+                    x.System,
+                    x.Code
+                }))
+        });
+
+    return Results.Json(results);
+});
+
+//  ---------------------------------------------------------
+
+app.MapGet("/fhir/test-normalized-bp", async (
+    FhirClientService fhirClient) =>
+{
+    const string baseUrl = "https://hapi.fhir.org/baseR4";
+
+    var bundle = await fhirClient.SearchObservationsAsync(
+        baseUrl, "36149");
+
+    var observations = bundle.Entry
+        .Select(e => e.Resource)
+        .OfType<Observation>()
+        .ToList();
+
+    var systolic = observations
+        .First(o => o.Id == "61195");
+
+    var diastolic = observations
+        .First(o => o.Id == "61196");
+
+    var bp = BloodPressureFactory.Create(
+        systolic, diastolic);
+
+    var serializer = new FhirJsonSerializer();
+
+    return Results.Text(
+        serializer.SerializeToString(bp),
+        "application/fhir+json");
+});
 
 //  ---------------------------------------------------------
 
