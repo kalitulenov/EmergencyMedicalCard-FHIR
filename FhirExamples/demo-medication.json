@@ -1,0 +1,26 @@
+{
+  "resourceType": "MedicationRequest",
+  "id": "demo-medication-001",
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>Lisinopril 10 mg oral tablet</p><p>Status: Active</p><p>Intent: Order</p></div>"
+  },
+  "status": "active",
+  "intent": "order",
+  "medicationCodeableConcept": {
+    "coding": [
+      {
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "code": "314076",
+        "display": "Lisinopril 10 MG Oral Tablet"
+      }
+    ],
+    "text": "Lisinopril 10 MG Oral Tablet"
+  },
+  "subject": { "reference": "https://hapi.fhir.org/baseR4/Patient/36149" },
+  "authoredOn": "2026-10-01",
+  "requester": {
+    "reference": "Practitioner/demo-doctor-001",
+    "display": "Demo Physician"
+  }
+}

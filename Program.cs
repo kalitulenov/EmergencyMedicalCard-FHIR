@@ -1640,6 +1640,20 @@ app.MapGet("/fhir/export-external-bundle", async (
             await fhirClient.GetPatientMedicalSummaryAsync(
                 baseUrl, patientId);
 
+        Console.WriteLine(
+                $"Observations before normalization: {summary.Observations.Count}");
+
+        foreach (var observation in summary.Observations)
+        {
+            var code = observation.Code?.Coding?
+                .FirstOrDefault(c => c.System == "http://loinc.org")?.Code;
+
+            Console.WriteLine(
+                $"Observation ID={observation.Id}, LOINC={code}");
+        }
+
+
+
         var systolic = summary.Observations
             .First(o => o.Id == "61195");
 
@@ -1658,29 +1672,93 @@ app.MapGet("/fhir/export-external-bundle", async (
 
         summary.Observations.Add(normalizedBp);
 
-        var heartRate = summary.Observations
-                        .FirstOrDefault(o => o.Id == "61197");
 
-        var glucose = summary.Observations
-                        .FirstOrDefault(o => o.Id == "61198");
-
-        if (glucose != null)
+        foreach (var observation in summary.Observations)
         {
-            var normalizedGlucose =
-                GlucoseNormalizer.Normalize(glucose);
+            if (observation.Id == "61195" ||
+                observation.Id == "61196" ||
+                observation.Id == "61197" ||
+                observation.Id == "61198")
+            {
+                continue;
+            }
 
-            summary.Observations.Remove(glucose);
-            summary.Observations.Add(normalizedGlucose);
+            Console.WriteLine(
+                $"Observation ID: {observation.Id}");
+
+            Console.WriteLine(
+                $"Status: {observation.Status}");
+
+            Console.WriteLine(
+                $"Code Text: {observation.Code?.Text}");
+
+            foreach (var coding in
+                observation.Code?.Coding ?? new List<Coding>())
+            {
+                Console.WriteLine(
+                    $"System: {coding.System}, " +
+                    $"Code: {coding.Code}, " +
+                    $"Display: {coding.Display}");
+            }
+
+            Console.WriteLine(
+                $"Value Type: {observation.Value?.GetType().Name}");
+
+            if (observation.Value is FhirString textValue)
+            {
+                Console.WriteLine(
+                    $"Value: {textValue.Value}");
+            }
+
+            Console.WriteLine("----------------------");
         }
 
-        if (heartRate != null)
-        {
-            var normalizedHeartRate =
-                HeartRateNormalizer.Normalize(heartRate);
+        var testObservations = summary.Observations
+                .Where(ObservationClassifier.IsTestObservation)
+                .ToList();
 
-            summary.Observations.Remove(heartRate);
-            summary.Observations.Add(normalizedHeartRate);
+        var otherObservations = summary.Observations
+            .Where(o => !ObservationClassifier.IsTestObservation(o))
+            .ToList();
+
+        Console.WriteLine(
+            $"Total Observations: {summary.Observations.Count}");
+
+        Console.WriteLine(
+            $"Test Observations: {testObservations.Count}");
+
+        Console.WriteLine(
+            $"Other Observations: {otherObservations.Count}");
+
+        var patientUrl =
+            $"{baseUrl.TrimEnd('/')}/Patient/{patient.Id}";
+
+        var normalizedObservations =
+            FhirObservationNormalizer.Normalize(
+                summary.Observations,
+                patientUrl);
+
+        summary.Observations.Clear();
+        summary.Observations.AddRange(normalizedObservations);
+
+        var emergencyObservations =
+            EmergencyCardFilter.SelectObservations(
+                    summary.Observations);
+
+        Console.WriteLine(
+            $"All Observations: {summary.Observations.Count}");
+
+        Console.WriteLine(
+            $"Emergency Observations: {emergencyObservations.Count}");
+
+        foreach (var observation in emergencyObservations)
+        {
+            Console.WriteLine(
+                $"Emergency Observation: {observation.Id}");
         }
+
+        Console.WriteLine(
+            $"Observations after normalization: {summary.Observations.Count}");
 
         var bundle = BundleFactory.CreateMedicalBundle(
             patient, summary, baseUrl);
@@ -1702,6 +1780,163 @@ app.MapGet("/fhir/export-external-bundle", async (
         });
     }
 });
+
+// ----------------------------------------------------------
+
+app.MapGet("/fhir/emergency-card",
+    async (FhirClientService fhirClient, bool demo = false) =>
+    {
+        const string patientId = "36149";
+        const string baseUrl = "https://hapi.fhir.org/baseR4";
+
+        var patient = await fhirClient.GetPatientAsync(baseUrl, patientId);
+
+        if (patient == null)
+        {
+            return Results.NotFound("Patient not found.");
+        }
+
+        var summary = await fhirClient.GetPatientMedicalSummaryAsync(
+                baseUrl, patientId);
+
+        var patientUrl =
+            $"{baseUrl}/Patient/{patient.Id}";
+
+        var normalizedObservations =
+            FhirObservationNormalizer.Normalize(
+                summary.Observations,
+                patientUrl);
+
+        var emergencyObservations =
+            EmergencyCardFilter.SelectObservations(
+                normalizedObservations);
+
+        var bundle = new Bundle
+        {
+            Id = Guid.NewGuid().ToString(),
+            Type = Bundle.BundleType.Collection,
+            Timestamp = DateTimeOffset.UtcNow
+        };
+
+        bundle.Entry.Add(new Bundle.EntryComponent
+        {
+            FullUrl = patientUrl,
+            Resource = patient
+        });
+
+        foreach (var condition in summary.Conditions)
+        {
+            bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"{baseUrl}/Condition/{condition.Id}",
+                Resource = condition
+            });
+        }
+
+        foreach (var allergy in summary.Allergies)
+        {
+            bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"{baseUrl}/AllergyIntolerance/{allergy.Id}",
+                Resource = allergy
+            });
+        }
+
+        if (demo)
+        {
+            var demoAllergy =
+                DemoAllergyFactory.Create(patientId);
+
+            demoAllergy.Patient =
+                new ResourceReference(patientUrl);
+
+            bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"urn:uuid:{Guid.NewGuid()}",
+                Resource = demoAllergy
+            });
+        }
+
+        if (demo)
+        {
+            var demoCondition =
+                DemoConditionFactory.Create(patientId);
+
+            demoCondition.Subject =
+                new ResourceReference(patientUrl);
+
+            bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"urn:uuid:{Guid.NewGuid()}",
+                Resource = demoCondition
+            });
+        }
+
+        if (demo)
+        {
+            var demoMedication =
+                DemoMedicationRequestFactory.Create(patientId);
+
+            Console.WriteLine(
+                $"Medication requester: {demoMedication.Requester?.Reference}");
+
+            demoMedication.Subject =
+                new ResourceReference(patientUrl);
+
+            bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"urn:uuid:{Guid.NewGuid()}",
+                Resource = demoMedication
+            });
+
+
+        }
+
+
+
+        foreach (var medication in summary.Medications)
+        {
+            bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"{baseUrl}/MedicationRequest/{medication.Id}",
+                Resource = medication
+            });
+        }
+
+        foreach (var observation in emergencyObservations)
+        {
+            bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl =
+                    $"{baseUrl}/Observation/{observation.Id}",
+                Resource = observation
+            });
+        }
+        // Add other resource types (Practitioner, MedicationRequest, etc.) as needed
+        Console.WriteLine("=== Emergency Medical Card ===");
+
+        Console.WriteLine(
+            $"Conditions: {summary.Conditions.Count}");
+
+        Console.WriteLine(
+            $"Allergies: {summary.Allergies.Count}");
+
+        Console.WriteLine(
+            $"MedicationRequests: {summary.Medications.Count}");
+
+        Console.WriteLine(
+            $"Observations: {emergencyObservations.Count}");
+
+        Console.WriteLine(
+            $"Total Bundle Resources: {bundle.Entry.Count}");
+        // 
+
+        var serializer = new FhirJsonSerializer();
+
+        return Results.Text(
+            serializer.SerializeToString(bundle),
+            "application/fhir+json");
+    });
 
 //  ---------------------------------------------------------
 
