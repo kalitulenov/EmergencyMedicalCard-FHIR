@@ -1789,6 +1789,103 @@ app.MapGet("/fhir/emergency-card",
         const string patientId = "36149";
         const string baseUrl = "https://hapi.fhir.org/baseR4";
 
+        // ---------------------------------------------------------
+
+        if (demo)
+        {
+            var demoBundle = new Bundle
+            {
+                Id = Guid.NewGuid().ToString(),
+                Type = Bundle.BundleType.Collection,
+                Timestamp = DateTimeOffset.UtcNow
+            };
+
+            var demoPatient = DemoPatientFactory.Create();
+            var demoPatientFullUrl = "urn:uuid:11111111-1111-4111-8111-111111111111";
+
+            demoBundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = demoPatientFullUrl,
+                Resource = demoPatient
+            });
+
+            var demoAllergy =
+                DemoAllergyFactory.Create(demoPatient.Id);
+
+            demoAllergy.Patient =
+                new ResourceReference(demoPatientFullUrl);
+
+            demoBundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"urn:uuid:{Guid.NewGuid()}",
+                Resource = demoAllergy
+            });
+
+            var demoCondition =
+                DemoConditionFactory.Create(demoPatient.Id);
+
+            demoCondition.Subject =
+                new ResourceReference(demoPatientFullUrl);
+
+            demoBundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"urn:uuid:{Guid.NewGuid()}",
+                Resource = demoCondition
+            });
+
+            var demoPractitionerFullUrl =
+                $"urn:uuid:{Guid.NewGuid()}";
+
+            var demoPractitioner =
+                DemoPractitionerFactory.Create();
+
+            demoBundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = demoPractitionerFullUrl,
+                Resource = demoPractitioner
+            });
+
+            var demoMedication =
+                DemoMedicationRequestFactory.Create(demoPatient.Id);
+
+            demoMedication.Subject =
+                new ResourceReference(demoPatientFullUrl);
+
+            demoMedication.Requester =
+                new ResourceReference(demoPractitionerFullUrl);
+
+            demoBundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"urn:uuid:{Guid.NewGuid()}",
+                Resource = demoMedication
+            });
+
+            var demoObservations =
+                DemoObservationFactory.Create(
+                    demoPatientFullUrl,
+                    demoPractitionerFullUrl);
+
+            foreach (var observation in demoObservations)
+            {
+                demoBundle.Entry.Add(new Bundle.EntryComponent
+                {
+                    FullUrl = $"urn:uuid:{Guid.NewGuid()}",
+                    Resource = observation
+                });
+            }
+
+            Console.WriteLine(
+                $"Demo Bundle Resources: {demoBundle.Entry.Count}");
+
+            var demoSerializer = new FhirJsonSerializer();
+
+            return Results.Text(
+                demoSerializer.SerializeToString(demoBundle),
+                "application/fhir+json");
+        }
+
+        // ---------------------------------------------------------
+
         var patient = await fhirClient.GetPatientAsync(baseUrl, patientId);
 
         if (patient == null)
@@ -1818,11 +1915,15 @@ app.MapGet("/fhir/emergency-card",
             Timestamp = DateTimeOffset.UtcNow
         };
 
+        //   string demoPatientUrl = "urn:uuid:11111111-1111-4111-8111-111111111111";
+
+
         bundle.Entry.Add(new Bundle.EntryComponent
         {
             FullUrl = patientUrl,
             Resource = patient
         });
+
 
         foreach (var condition in summary.Conditions)
         {
@@ -1842,56 +1943,7 @@ app.MapGet("/fhir/emergency-card",
             });
         }
 
-        if (demo)
-        {
-            var demoAllergy =
-                DemoAllergyFactory.Create(patientId);
-
-            demoAllergy.Patient =
-                new ResourceReference(patientUrl);
-
-            bundle.Entry.Add(new Bundle.EntryComponent
-            {
-                FullUrl = $"urn:uuid:{Guid.NewGuid()}",
-                Resource = demoAllergy
-            });
-        }
-
-        if (demo)
-        {
-            var demoCondition =
-                DemoConditionFactory.Create(patientId);
-
-            demoCondition.Subject =
-                new ResourceReference(patientUrl);
-
-            bundle.Entry.Add(new Bundle.EntryComponent
-            {
-                FullUrl = $"urn:uuid:{Guid.NewGuid()}",
-                Resource = demoCondition
-            });
-        }
-
-        if (demo)
-        {
-            var demoMedication =
-                DemoMedicationRequestFactory.Create(patientId);
-
-            Console.WriteLine(
-                $"Medication requester: {demoMedication.Requester?.Reference}");
-
-            demoMedication.Subject =
-                new ResourceReference(patientUrl);
-
-            bundle.Entry.Add(new Bundle.EntryComponent
-            {
-                FullUrl = $"urn:uuid:{Guid.NewGuid()}",
-                Resource = demoMedication
-            });
-
-
-        }
-
+        var practitionerFullUrl = $"urn:uuid:{Guid.NewGuid()}";
 
 
         foreach (var medication in summary.Medications)
@@ -1907,11 +1959,11 @@ app.MapGet("/fhir/emergency-card",
         {
             bundle.Entry.Add(new Bundle.EntryComponent
             {
-                FullUrl =
-                    $"{baseUrl}/Observation/{observation.Id}",
+                FullUrl = $"{baseUrl}/Observation/{observation.Id}",
                 Resource = observation
             });
         }
+
         // Add other resource types (Practitioner, MedicationRequest, etc.) as needed
         Console.WriteLine("=== Emergency Medical Card ===");
 

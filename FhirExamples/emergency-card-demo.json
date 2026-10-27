@@ -1,29 +1,19 @@
 {
   "resourceType": "Bundle",
-  "id": "8d2ec476-a677-4277-861a-58b959511aa4",
+  "id": "842fd5f2-03d2-4960-9e3e-fc51c9315068",
   "type": "collection",
-  "timestamp": "2026-10-26T01:51:43.1682659+00:00",
+  "timestamp": "2026-10-27T02:45:14.5089995+00:00",
   "entry": [
     {
-      "fullUrl": "https://hapi.fhir.org/baseR4/Patient/36149",
+      "fullUrl": "urn:uuid:11111111-1111-4111-8111-111111111111",
       "resource": {
         "resourceType": "Patient",
-        "id": "36149",
-        "meta": {
-          "versionId": "3",
-          "lastUpdated": "2026-10-06T23:58:58.555-04:00",
-          "source": "#0SvbNaYLHJevYMg5"
-        },
+        "id": "demo-patient-001",
         "text": {
           "status": "generated",
-          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">Robert <b>SMITH </b></div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>MRN-100002</td></tr><tr><td>Date of birth</td><td><span>02 November 1972</span></td></tr></tbody></table></div>"
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>Robert Smith</p><p>Male, born 1960-05-15</p><p>Demonstration patient - synthetic data</p></div>"
         },
-        "identifier": [
-          {
-            "system": "urn:oid:2.16.840.1.113883.19.5",
-            "value": "MRN-100002"
-          }
-        ],
+        "active": true,
         "name": [
           {
             "use": "official",
@@ -32,37 +22,11 @@
           }
         ],
         "gender": "male",
-        "birthDate": "1972-11-02",
-        "contact": [
-          {
-            "relationship": [
-              {
-                "coding": [
-                  {
-                    "system": "http://terminology.hl7.org/CodeSystem/v2-0131",
-                    "code": "C",
-                    "display": "Emergency Contact"
-                  }
-                ]
-              }
-            ],
-            "name": {
-              "family": "Smith",
-              "given": [ "Linda" ]
-            },
-            "telecom": [
-              {
-                "system": "phone",
-                "value": "555-0199",
-                "use": "mobile"
-              }
-            ]
-          }
-        ]
+        "birthDate": "1960-05-15"
       }
     },
     {
-      "fullUrl": "urn:uuid:3aa666ed-7f8c-4b9b-86cf-90d985a42921",
+      "fullUrl": "urn:uuid:321d86b5-2007-42cc-bab0-186738ec9de5",
       "resource": {
         "resourceType": "AllergyIntolerance",
         "id": "demo-allergy-001",
@@ -98,11 +62,11 @@
           ],
           "text": "Allergy to penicillin"
         },
-        "patient": { "reference": "https://hapi.fhir.org/baseR4/Patient/36149" }
+        "patient": { "reference": "urn:uuid:11111111-1111-4111-8111-111111111111" }
       }
     },
     {
-      "fullUrl": "urn:uuid:8031b8e8-4747-4281-a37e-6ee3c407911b",
+      "fullUrl": "urn:uuid:42d6713a-ecf7-4493-bdba-3ac9281422fe",
       "resource": {
         "resourceType": "Condition",
         "id": "demo-condition-001",
@@ -146,11 +110,31 @@
           ],
           "text": "Essential hypertension"
         },
-        "subject": { "reference": "https://hapi.fhir.org/baseR4/Patient/36149" }
+        "subject": { "reference": "urn:uuid:11111111-1111-4111-8111-111111111111" }
       }
     },
     {
-      "fullUrl": "urn:uuid:7a2411d1-2732-4133-ac19-48c3d027fe71",
+      "fullUrl": "urn:uuid:aef4df52-c259-4677-afb9-35b2b4c8af72",
+      "resource": {
+        "resourceType": "Practitioner",
+        "id": "demo-doctor-001",
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>Dr. Michael Johnson</p><p>Demo Physician</p></div>"
+        },
+        "active": true,
+        "name": [
+          {
+            "use": "official",
+            "family": "Johnson",
+            "given": [ "Michael" ],
+            "prefix": [ "Dr." ]
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:aa2a3e10-d2bd-458a-b871-5309f5a5cb7f",
       "resource": {
         "resourceType": "MedicationRequest",
         "id": "demo-medication-001",
@@ -170,24 +154,16 @@
           ],
           "text": "Lisinopril 10 MG Oral Tablet"
         },
-        "subject": { "reference": "https://hapi.fhir.org/baseR4/Patient/36149" },
+        "subject": { "reference": "urn:uuid:11111111-1111-4111-8111-111111111111" },
         "authoredOn": "2026-10-01",
-        "requester": {
-          "reference": "Practitioner/demo-doctor-001",
-          "display": "Demo Physician"
-        }
+        "requester": { "reference": "urn:uuid:aef4df52-c259-4677-afb9-35b2b4c8af72" }
       }
     },
     {
-      "fullUrl": "https://hapi.fhir.org/baseR4/Observation/61197",
+      "fullUrl": "urn:uuid:180549cd-788b-4c55-9ee8-496f855386ae",
       "resource": {
         "resourceType": "Observation",
-        "id": "61197",
-        "meta": {
-          "versionId": "1",
-          "lastUpdated": "2026-09-29T22:01:40.152-04:00",
-          "source": "#4maJ8Y35D3toh3gi"
-        },
+        "id": "demo-heart-rate-001",
         "status": "final",
         "category": [
           {
@@ -196,38 +172,37 @@
                 "system": "http://terminology.hl7.org/CodeSystem/observation-category",
                 "code": "vital-signs"
               }
-            ],
-            "text": "Vital Signs"
+            ]
           }
         ],
         "code": {
           "coding": [
             {
               "system": "http://loinc.org",
-              "code": "8867-4",
-              "display": "Heart rate"
+              "code": "8867-4"
             }
-          ]
+          ],
+          "text": "Heart rate"
         },
-        "subject": { "reference": "Patient/36149" },
-        "effectiveDateTime": "2026-09-29T12:00:00Z",
+        "subject": { "reference": "urn:uuid:11111111-1111-4111-8111-111111111111" },
+        "effectiveDateTime": "2026-10-01T10:00:00Z",
+        "performer": [ { "reference": "urn:uuid:aef4df52-c259-4677-afb9-35b2b4c8af72" } ],
         "valueQuantity": {
           "value": 65,
-          "unit": "beats/min",
+          "unit": "beats/minute",
           "system": "http://unitsofmeasure.org",
           "code": "/min"
         }
       }
     },
     {
-      "fullUrl": "https://hapi.fhir.org/baseR4/Observation/61198",
+      "fullUrl": "urn:uuid:cadd58aa-0336-42ba-9ea7-2bf474ab5835",
       "resource": {
         "resourceType": "Observation",
-        "id": "61198",
-        "meta": {
-          "versionId": "1",
-          "lastUpdated": "2026-09-29T22:01:40.554-04:00",
-          "source": "#BMuSG6EjqoCNXvbN"
+        "id": "demo-glucose-001",
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>Blood glucose: 92 mg/dL</p><p>Demonstration measurement - synthetic data</p></div>"
         },
         "status": "final",
         "category": [
@@ -237,32 +212,34 @@
                 "system": "http://terminology.hl7.org/CodeSystem/observation-category",
                 "code": "laboratory"
               }
-            ],
-            "text": "Laboratory"
+            ]
           }
         ],
         "code": {
           "coding": [
             {
               "system": "http://loinc.org",
-              "code": "2339-0",
-              "display": "Glucose [Mass/volume] in Blood"
+              "code": "2339-0"
             }
-          ]
+          ],
+          "text": "Glucose [Mass/volume] in Blood"
         },
-        "subject": { "reference": "Patient/36149" },
-        "effectiveDateTime": "2026-09-29T12:00:00Z",
+        "subject": { "reference": "urn:uuid:11111111-1111-4111-8111-111111111111" },
+        "effectiveDateTime": "2026-10-01T10:00:00Z",
+        "performer": [ { "reference": "urn:uuid:aef4df52-c259-4677-afb9-35b2b4c8af72" } ],
         "valueQuantity": {
           "value": 92,
-          "unit": "mg/dL"
+          "unit": "mg/dL",
+          "system": "http://unitsofmeasure.org",
+          "code": "mg/dL"
         }
       }
     },
     {
-      "fullUrl": "https://hapi.fhir.org/baseR4/Observation/bp-36149-001",
+      "fullUrl": "urn:uuid:3d8d3cb2-8be1-460b-b1dc-9f12d2745545",
       "resource": {
         "resourceType": "Observation",
-        "id": "bp-36149-001",
+        "id": "demo-bp-001",
         "status": "final",
         "category": [
           {
@@ -271,8 +248,7 @@
                 "system": "http://terminology.hl7.org/CodeSystem/observation-category",
                 "code": "vital-signs"
               }
-            ],
-            "text": "Vital Signs"
+            ]
           }
         ],
         "code": {
@@ -282,10 +258,11 @@
               "code": "85354-9"
             }
           ],
-          "text": "Blood pressure panel with all children optional"
+          "text": "Blood pressure panel"
         },
-        "subject": { "reference": "https://hapi.fhir.org/baseR4/Patient/36149" },
-        "effectiveDateTime": "2026-09-29T12:00:00Z",
+        "subject": { "reference": "urn:uuid:11111111-1111-4111-8111-111111111111" },
+        "effectiveDateTime": "2026-10-01T10:00:00Z",
+        "performer": [ { "reference": "urn:uuid:aef4df52-c259-4677-afb9-35b2b4c8af72" } ],
         "component": [
           {
             "code": {
